@@ -1,0 +1,32 @@
+# Step 1: Create auth user
+# IMPORTANT: Replace YOUR_SERVICE_ROLE_KEY with your actual service role key from Supabase Dashboard > Settings > API
+# SECURITY: Never commit real service keys to version control!
+curl -X POST "https://YOUR_SUPABASE_URL.supabase.co/auth/v1/admin/users" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -H "apikey: YOUR_SERVICE_ROLE_KEY" \
+  -d '{
+    "email": "admin@vanguardcargo.co",
+    "password": "VanguardAdmin2024!",
+    "email_confirm": true,
+    "user_metadata": {
+      "first_name": "Admin",
+      "last_name": "User"
+    }
+  }'
+
+# Step 2: Create profile (use the ID returned from step 1)
+curl -X POST "https://YOUR_SUPABASE_URL.supabase.co/rest/v1/users" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -H "apikey: YOUR_SERVICE_ROLE_KEY" \
+  -H "Prefer: return=representation" \
+  -d '{
+    "id": "03425a26-2c0d-48da-a3ca-141f0dac0e2d",
+    "email": "admin@vanguardcargo.co",
+    "first_name": "Admin",
+    "last_name": "User",
+    "role": "superadmin",
+    "status": "active",
+    "email_verified": true
+  }'

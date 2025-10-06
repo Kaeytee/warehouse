@@ -1,0 +1,23 @@
+/* Import Roboto font from @fontsource/roboto package */
+@import '@fontsource/roboto/300.css';
+@import '@fontsource/roboto/400.css';
+@import '@fontsource/roboto/500.css';
+@import '@fontsource/roboto/700.css';
+
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply Roboto font to all elements */
+@layer base {
+  html {
+    font-family: "Roboto", sans-serif;
+  }
+  
+  body {
+    font-family: "Roboto", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

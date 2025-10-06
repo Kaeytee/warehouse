@@ -1,0 +1,61 @@
+# =====================================================
+# SUPABASE STORAGE BUCKET CLEANUP SCRIPT
+# =====================================================
+# This script will clear all files from the avatars storage bucket
+# Run this AFTER clearing database and auth users
+# 
+# @author Senior Software Engineer
+# @version 1.0.0
+# @created 2025-09-26
+# =====================================================
+
+echo "====================================================="
+echo "STORAGE BUCKET CLEANUP - AVATARS"
+echo "====================================================="
+
+# Step 1: List all files in the avatars bucket
+echo "Step 1: Listing all files in avatars bucket..."
+curl -X GET "https://YOUR_SUPABASE_URL.supabase.co/storage/v1/object/list/avatars" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "apikey: YOUR_SERVICE_ROLE_KEY"
+
+echo ""
+echo "====================================================="
+echo "MANUAL FILE DELETION REQUIRED:"
+echo "====================================================="
+echo "1. Copy each file name from the response above"
+echo "2. Delete each file individually using the command below"
+echo "3. Replace FILENAME_HERE with the actual file name"
+echo ""
+
+# Step 2: Delete individual files (replace FILENAME_HERE with actual file names)
+echo "# Delete file template (run for each file):"
+echo 'curl -X DELETE "https://YOUR_SUPABASE_URL.supabase.co/storage/v1/object/avatars/FILENAME_HERE" \'
+echo '  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \'
+echo '  -H "apikey: YOUR_SERVICE_ROLE_KEY"'
+
+echo ""
+echo "# Alternative: Delete multiple files at once (if supported)"
+echo "# Note: This may not work - Supabase typically requires individual file deletion"
+echo 'curl -X DELETE "https://YOUR_SUPABASE_URL.supabase.co/storage/v1/object/avatars" \'
+echo '  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \'
+echo '  -H "apikey: YOUR_SERVICE_ROLE_KEY" \'
+echo '  -H "Content-Type: application/json" \'
+echo '  -d '"'"'{"prefixes": [""]}'"'"
+
+echo ""
+echo "# Step 3: Verify bucket is empty"
+echo 'curl -X GET "https://YOUR_SUPABASE_URL.supabase.co/storage/v1/object/list/avatars" \'
+echo '  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \'
+echo '  -H "apikey: YOUR_SERVICE_ROLE_KEY"'
+
+echo ""
+echo "====================================================="
+echo "CLEANUP ORDER:"
+echo "====================================================="
+echo "1. Run clear_all_users.sql (database cleanup)"
+echo "2. Run clear_supabase_auth.txt (auth users cleanup)"
+echo "3. Run this script (storage cleanup)"
+echo "4. Verify all systems are clean"
+echo "5. Ready for production deployment"
+echo "====================================================="
