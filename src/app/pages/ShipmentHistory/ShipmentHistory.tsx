@@ -1,135 +1,177 @@
 import React, { useState, useEffect } from 'react';
 import { FiPackage, FiTruck, FiMapPin, FiCheck, FiLoader, FiAlertCircle, FiSearch, FiChevronRight, FiClock, FiUser, FiBox, FiCalendar } from 'react-icons/fi';
+import { warehouseShipmentService, type ShipmentData, type ShipmentStatus } from '../../../services/warehouseShipmentService';
+import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 
+/**
+ * Shipment interface matching the backend data structure
+ */
 interface Shipment {
   id: string;
-  tracking_number: string;
-  status: 'shipped' | 'in_transit' | 'arrived' | 'delivered';
+  shipment_number: string;
+  status: ShipmentStatus;
   recipient_name: string;
   recipient_phone: string;
+  recipient_email?: string | null;
   delivery_address: string;
   delivery_city: string;
+  delivery_region?: string | null;
   delivery_country: string;
-  total_weight: number;
-  total_value: number;
-  service_type: 'standard' | 'express' | 'overnight';
+  total_weight_lbs: number | null;
+  total_declared_value: number | null;
+  total_packages: number;
+  total_cost: number | null;
+  service_type: string;
   created_at: string;
   updated_at: string;
-  user_name: string;
-  suite_number: string;
-  packages_count: number;
+  customer_name?: string;
+  customer_email?: string;
+  user_id: string;
 }
 
 const ShipmentHistory: React.FC = () => {
+  const { userId } = useWarehouseAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Shipment['status']>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | ShipmentStatus>('all');
   const [isUpdating, setIsUpdating] = useState<string>('');
   const [expandedShipment, setExpandedShipment] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalShipments, setTotalShipments] = useState(0);
+  const itemsPerPage = 20;
 
-  // Mock data for demo
-  useEffect(() => {
-    setTimeout(() => {
-      setShipments([
-        {
-          id: '1',
-          tracking_number: 'VCG2024001234',
-          status: 'shipped',
-          recipient_name: 'John Doe',
-          recipient_phone: '+1 234 567 8900',
-          delivery_address: '123 Main Street, Apt 4B',
-          delivery_city: 'New York',
-          delivery_country: 'USA',
-          total_weight: 2.5,
-          total_value: 150,
-          service_type: 'express',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          user_name: 'Sarah Johnson',
-          suite_number: 'STE-001',
-          packages_count: 2
-        },
-        {
-          id: '2',
-          tracking_number: 'VCG2024001235',
-          status: 'in_transit',
-          recipient_name: 'Jane Smith',
-          recipient_phone: '+1 234 567 8901',
-          delivery_address: '456 Oak Avenue',
-          delivery_city: 'Los Angeles',
-          delivery_country: 'USA',
-          total_weight: 3.8,
-          total_value: 250,
-          service_type: 'standard',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_name: 'Michael Chen',
-          suite_number: 'STE-002',
-          packages_count: 1
-        },
-        {
-          id: '3',
-          tracking_number: 'VCG2024001236',
-          status: 'arrived',
-          recipient_name: 'Robert Williams',
-          recipient_phone: '+1 234 567 8902',
-          delivery_address: '789 Pine Street',
-          delivery_city: 'Chicago',
-          delivery_country: 'USA',
-          total_weight: 1.2,
-          total_value: 75,
-          service_type: 'overnight',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_name: 'Emily Davis',
-          suite_number: 'STE-003',
-          packages_count: 3
-        },
-        {
-          id: '4',
-          tracking_number: 'VCG2024001237',
-          status: 'delivered',
-          recipient_name: 'Lisa Anderson',
-          recipient_phone: '+1 234 567 8903',
-          delivery_address: '321 Elm Drive',
-          delivery_city: 'Miami',
-          delivery_country: 'USA',
-          total_weight: 4.5,
-          total_value: 300,
-          service_type: 'express',
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          updated_at: new Date().toISOString(),
-          user_name: 'David Wilson',
-          suite_number: 'STE-004',
-          packages_count: 2
-        }
-      ]);
+  /**
+   * Fetch shipments from Supabase backend
+   */
+  const fetchShipments = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      // Build filters based on current state
+      const filters: any = {};
+      
+      if (statusFilter !== 'all') {
+        filters.status = [statusFilter];
+      }
+      
+      if (searchTerm.trim()) {
+        filters.search = searchTerm.trim();
+      }
+
+      // Fetch shipments from backend
+      const response = await warehouseShipmentService.getShipments(
+        filters,
+        currentPage,
+        itemsPerPage
+      );
+
+      // Transform backend data to match our interface
+      const transformedShipments: Shipment[] = response.shipments.map((shipment: ShipmentData) => ({
+        id: shipment.id,
+        shipment_number: shipment.tracking_number, // Map tracking_number to shipment_number for display
+        status: shipment.status,
+        recipient_name: shipment.recipient_name,
+        recipient_phone: shipment.recipient_phone,
+        recipient_email: null, // Not in database schema
+        delivery_address: shipment.delivery_address,
+        delivery_city: shipment.delivery_city,
+        delivery_region: null, // Not in database schema
+        delivery_country: shipment.delivery_country,
+        total_weight_lbs: shipment.total_weight,
+        total_declared_value: shipment.total_value,
+        total_packages: 1, // Default value, will need to calculate from package_shipments table
+        total_cost: shipment.shipping_cost,
+        service_type: shipment.service_type,
+        created_at: shipment.created_at,
+        updated_at: shipment.updated_at,
+        customer_name: shipment.customer_name,
+        customer_email: shipment.customer_email,
+        user_id: shipment.user_id
+      }));
+
+      setShipments(transformedShipments);
+      setTotalShipments(response.total);
+      setTotalPages(response.total_pages);
+      
+    } catch (err) {
+      console.error('Error fetching shipments:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load shipments from database');
+    } finally {
       setIsLoading(false);
-    }, 800);
-  }, []);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchShipments();
+    }, searchTerm ? 500 : 0); // 500ms delay for search, immediate for other changes
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, statusFilter, searchTerm]);
 
   const updateShipmentStatus = async (shipmentId: string, newStatus: Shipment['status']) => {
     setIsUpdating(shipmentId);
     setError('');
 
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    try {
+      // Update status in database using the warehouse shipment service
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+      
+      await warehouseShipmentService.updateShipmentStatus(
+        shipmentId, 
+        newStatus, 
+        userId, 
+        `Status updated to ${newStatus}`
+      );
+      
+      // Update local state to reflect the change
+      setShipments(prev => prev.map(shipment => 
+        shipment.id === shipmentId 
+          ? { ...shipment, status: newStatus, updated_at: new Date().toISOString() }
+          : shipment
+      ));
 
-    setShipments(prev => prev.map(shipment => 
-      shipment.id === shipmentId 
-        ? { ...shipment, status: newStatus, updated_at: new Date().toISOString() }
-        : shipment
-    ));
-
-    setSuccess(`Shipment status updated to ${newStatus.replace('_', ' ')}`);
-    setTimeout(() => setSuccess(''), 4000);
-    setIsUpdating('');
+      setSuccess(`Shipment status updated to ${newStatus.replace('_', ' ')}`);
+      setTimeout(() => setSuccess(''), 4000);
+      
+    } catch (err) {
+      console.error('Error updating shipment status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update shipment status');
+    } finally {
+      setIsUpdating('');
+    }
   };
 
-  const getStatusConfig = (status: Shipment['status']) => {
-    const configs = {
+  const getStatusConfig = (status: ShipmentStatus) => {
+    const configs: Record<ShipmentStatus, any> = {
+      pending: {
+        icon: FiClock,
+        color: 'text-gray-600',
+        bg: 'bg-gray-50',
+        border: 'border-gray-200',
+        ring: 'ring-gray-500',
+        gradient: 'from-gray-500 to-gray-600',
+        label: 'Pending'
+      },
+      processing: {
+        icon: FiLoader,
+        color: 'text-yellow-600',
+        bg: 'bg-yellow-50',
+        border: 'border-yellow-200',
+        ring: 'ring-yellow-500',
+        gradient: 'from-yellow-500 to-yellow-600',
+        label: 'Processing'
+      },
       shipped: {
         icon: FiTruck,
         color: 'text-purple-600',
@@ -167,27 +209,39 @@ const ShipmentHistory: React.FC = () => {
         label: 'Delivered'
       }
     };
-    return configs[status];
+    return configs[status] || configs.pending;
   };
 
-  const getNextStatus = (currentStatus: Shipment['status']): Shipment['status'] | null => {
-    const flow = { shipped: 'in_transit', in_transit: 'arrived', arrived: 'delivered', delivered: null };
-    return flow[currentStatus] as Shipment['status'] | null;
+  const getNextStatus = (currentStatus: ShipmentStatus): ShipmentStatus | null => {
+    const flow: Record<ShipmentStatus, ShipmentStatus | null> = { 
+      pending: 'processing', 
+      processing: 'shipped', 
+      shipped: 'in_transit',
+      in_transit: 'arrived',
+      arrived: 'delivered', 
+      delivered: null
+    };
+    return flow[currentStatus];
   };
 
-  const filteredShipments = shipments.filter(shipment => {
-    const matchesSearch = searchTerm === '' || 
-      shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      shipment.suite_number.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter and sort shipments (newest first for easy access)
+  const filteredShipments = shipments
+    .filter(shipment => {
+      const matchesSearch = searchTerm === '' || 
+        shipment.shipment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (shipment.customer_name && shipment.customer_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'all' || shipment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus = statusFilter === 'all' || shipment.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      // Sort by created_at in descending order (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
   const statusCounts = {
-    all: shipments.length,
+    all: totalShipments,
     shipped: shipments.filter(s => s.status === 'shipped').length,
     in_transit: shipments.filter(s => s.status === 'in_transit').length,
     arrived: shipments.filter(s => s.status === 'arrived').length,
@@ -200,7 +254,7 @@ const ShipmentHistory: React.FC = () => {
         {/* Header */}
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/30">
+            <div className="p-2.5 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg shadow-blue-500/30">
               <FiTruck className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight">
@@ -288,10 +342,9 @@ const ShipmentHistory: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 sm:p-16">
               <div className="flex flex-col items-center justify-center gap-4">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-4 border-gray-100"></div>
-                  <div className="w-12 h-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin absolute top-0 left-0"></div>
+                  <FiLoader className="w-12 h-12 text-red-500 animate-spin" />
                 </div>
-                <p className="text-gray-600 font-medium">Loading shipments...</p>
+                <p className="text-gray-600 font-medium">Loading shipments from database...</p>
               </div>
             </div>
           ) : filteredShipments.length === 0 ? (
@@ -333,7 +386,7 @@ const ShipmentHistory: React.FC = () => {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
                             <h3 className="text-base sm:text-lg font-semibold text-gray-900 font-mono truncate">
-                              {shipment.tracking_number}
+                              {shipment.shipment_number}
                             </h3>
                             <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bg} border ${statusConfig.border}`}>
                               <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
@@ -341,7 +394,7 @@ const ShipmentHistory: React.FC = () => {
                             </span>
                           </div>
                           <p className="text-sm text-gray-600">
-                            {shipment.packages_count} {shipment.packages_count === 1 ? 'package' : 'packages'} · {shipment.total_weight} kg · {shipment.service_type}
+                            {shipment.total_packages} {shipment.total_packages === 1 ? 'package' : 'packages'} · {shipment.total_weight_lbs || 0} lbs · {shipment.service_type}
                           </p>
                         </div>
                       </div>
@@ -391,8 +444,8 @@ const ShipmentHistory: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium text-gray-500 mb-0.5">Customer</p>
-                          <p className="text-sm font-semibold text-gray-900 truncate">{shipment.user_name}</p>
-                          <p className="text-xs text-gray-600">Suite {shipment.suite_number}</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{shipment.customer_name || 'Unknown Customer'}</p>
+                          <p className="text-xs text-gray-600">ID: {shipment.user_id.substring(0, 8)}...</p>
                         </div>
                       </div>
 
@@ -455,10 +508,6 @@ const ShipmentHistory: React.FC = () => {
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-gray-500 mb-1">Total Value</p>
-                          <p className="text-sm font-semibold text-gray-900">${shipment.total_value.toFixed(2)}</p>
-                        </div>
-                        <div>
                           <p className="text-xs font-medium text-gray-500 mb-1">Service Type</p>
                           <p className="text-sm font-semibold text-gray-900 capitalize">{shipment.service_type}</p>
                         </div>
@@ -470,6 +519,64 @@ const ShipmentHistory: React.FC = () => {
             })
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalShipments)} of {totalShipments} shipments</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        currentPage === page
+                          ? 'bg-red-500 text-white'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                {totalPages > 5 && (
+                  <>
+                    <span className="px-2 text-gray-500">...</span>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                        currentPage === totalPages
+                          ? 'bg-red-500 text-white'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

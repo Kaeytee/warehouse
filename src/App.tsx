@@ -2,10 +2,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useWarehouseAuth } from './hooks/useWarehouseAuth';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './app/login';
 import Dashboard from './app/pages/dashboard';
 import AppLayout from './components/layout/AppLayout';
-import IncomingRequest from './app/pages/IncomingRequest/IncomingRequest';
+import PackageIntake from './app/pages/PackageIntake/PackageIntake';
 import CreateShipment from './app/pages/CreateShipment/CreateShipment';
 import ShipmentHistory from './app/pages/ShipmentHistory/ShipmentHistory';
 import AnalysisReport from './app/pages/AnalysisReport/AnalysisReport';
@@ -97,7 +98,7 @@ const AppRoutes: React.FC = () => {
           path="/intake" 
           element={
             <RouteGuard requiredPermission="package_intake">
-              <IncomingRequest />
+              <PackageIntake />
             </RouteGuard>
           } 
         />
@@ -208,9 +209,11 @@ const App = (): React.ReactElement => {
   }, []);
   
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </ThemeProvider>
   );
 };
 

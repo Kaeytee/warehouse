@@ -3,7 +3,7 @@ import { postAccountingRecord } from './accounting';
 import type { AccountingRecord } from './accounting';
 
 // Type definition for modal props
-interface ProcessIncomingRequestModalProps {
+interface ProcessPackageIntakeModalProps {
   open: boolean;
   onClose: () => void;
   onMarkReceived: (data: {
@@ -271,7 +271,7 @@ const currencyOptions = [
   { label: 'USD', symbol: 'USD', regex: /^USD\d+(\.\d{1,2})?$/ },
 ];
 
-const ProcessIncomingRequestModal: React.FC<ProcessIncomingRequestModalProps> = ({ 
+const ProcessPackageIntakeModal: React.FC<ProcessPackageIntakeModalProps> = ({ 
   open, 
   onClose, 
   onMarkReceived, 
@@ -694,4 +694,4 @@ const ProcessIncomingRequestModal: React.FC<ProcessIncomingRequestModalProps> = 
   );
 };
 
-export default ProcessIncomingRequestModal;
+export default ProcessPackageIntakeModal;

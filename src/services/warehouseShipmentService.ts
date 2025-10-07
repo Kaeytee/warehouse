@@ -10,21 +10,19 @@ import { logger } from '../config/environment';
 
 export interface ShipmentData {
   id: string;
-  shipment_number: string;
+  tracking_number: string; // This matches the database column
   user_id: string;
   service_type: string;
   recipient_name: string;
   recipient_phone: string;
-  recipient_email: string | null;
   delivery_address: string;
   delivery_city: string;
-  delivery_region: string | null;
   delivery_country: string;
-  total_weight_lbs: number | null;
-  total_declared_value: number | null;
-  total_packages: number;
-  total_cost: number | null;
+  total_weight: number | null; // This matches the database column
+  total_value: number | null; // This matches the database column
+  shipping_cost: number | null;
   status: ShipmentStatus;
+  estimated_delivery: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -44,12 +42,11 @@ export interface ShipmentPackage {
 
 export type ShipmentStatus = 
   | 'pending'
-  | 'confirmed' 
+  | 'processing' 
+  | 'shipped'
   | 'in_transit'
-  | 'delivered'
-  | 'cancelled'
-  | 'awaiting_quote'
-  | 'awaiting_payment';
+  | 'arrived'
+  | 'delivered';
 
 export interface ShipmentFilters {
   status?: ShipmentStatus[];
@@ -57,6 +54,12 @@ export interface ShipmentFilters {
   destination_country?: string;
   date_from?: string;
   date_to?: string;
+  created_date_from?: string;
+  created_date_to?: string;
+  updated_date_from?: string;
+  updated_date_to?: string;
+  estimated_delivery_from?: string;
+  estimated_delivery_to?: string;
   search?: string;
   customer_id?: string;
 }
@@ -80,7 +83,7 @@ export interface CreateShipmentData {
 export interface ShipmentMetrics {
   total_shipments: number;
   pending_quote: number;
-  awaiting_payment: number;
+  processing: number;
   in_transit: number;
   delivered_this_month: number;
   total_revenue: number;
@@ -106,8 +109,23 @@ class WarehouseShipmentService {
       let query = supabase
         .from('shipments')
         .select(`
-          *,
-          user_profiles!shipments_user_id_fkey (
+          id,
+          tracking_number,
+          user_id,
+          status,
+          recipient_name,
+          recipient_phone,
+          delivery_address,
+          delivery_city,
+          delivery_country,
+          total_weight,
+          total_value,
+          shipping_cost,
+          service_type,
+          estimated_delivery,
+          created_at,
+          updated_at,
+          users!shipments_user_id_fkey (
             first_name,
             last_name,
             email
@@ -131,6 +149,7 @@ class WarehouseShipmentService {
         query = query.eq('user_id', filters.customer_id);
       }
 
+      // Legacy date filters (for backward compatibility)
       if (filters.date_from) {
         query = query.gte('created_at', filters.date_from);
       }
@@ -139,12 +158,33 @@ class WarehouseShipmentService {
         query = query.lte('created_at', filters.date_to);
       }
 
+      // Enhanced date filtering options
+      if (filters.created_date_from) {
+        query = query.gte('created_at', filters.created_date_from);
+      }
+
+      if (filters.created_date_to) {
+        query = query.lte('created_at', filters.created_date_to);
+      }
+
+      if (filters.updated_date_from) {
+        query = query.gte('updated_at', filters.updated_date_from);
+      }
+
+      if (filters.updated_date_to) {
+        query = query.lte('updated_at', filters.updated_date_to);
+      }
+
+      if (filters.estimated_delivery_from) {
+        query = query.gte('estimated_delivery', filters.estimated_delivery_from);
+      }
+
+      if (filters.estimated_delivery_to) {
+        query = query.lte('estimated_delivery', filters.estimated_delivery_to);
+      }
+
       if (filters.search) {
-        query = query.or(`
-          shipment_number.ilike.%${filters.search}%,
-          recipient_name.ilike.%${filters.search}%,
-          delivery_address.ilike.%${filters.search}%
-        `);
+        query = query.or(`tracking_number.ilike.%${filters.search}%,recipient_name.ilike.%${filters.search}%,delivery_address.ilike.%${filters.search}%`);
       }
 
       // Apply pagination
@@ -159,13 +199,17 @@ class WarehouseShipmentService {
         throw error;
       }
 
-      // Transform data
-      const shipments: ShipmentData[] = (data || []).map(shipment => ({
+      // Transform data with real customer info and proper date/time fields
+      const shipments: ShipmentData[] = (data || []).map((shipment: any) => ({
         ...shipment,
-        customer_name: shipment.user_profiles 
-          ? `${shipment.user_profiles.first_name} ${shipment.user_profiles.last_name}`
-          : null,
-        customer_email: shipment.user_profiles?.email || null,
+        customer_name: shipment.users 
+          ? `${shipment.users.first_name} ${shipment.users.last_name}`.trim()
+          : 'Unknown Customer',
+        customer_email: shipment.users?.email || null,
+        // Ensure date/time fields are properly formatted
+        created_at: shipment.created_at,
+        updated_at: shipment.updated_at,
+        estimated_delivery: shipment.estimated_delivery,
       }));
 
       const total = count || 0;
@@ -307,7 +351,7 @@ class WarehouseShipmentService {
           total_weight_lbs,
           total_declared_value,
           total_packages,
-          status: 'awaiting_quote',
+          status: 'pending',
           is_express: shipmentData.is_express || false,
           is_insured: shipmentData.is_insured || false,
         })
@@ -351,14 +395,7 @@ class WarehouseShipmentService {
         // Continue anyway - shipment is created
       }
 
-      // Log shipment creation
-      await this.logShipmentStatusChange(
-        newShipment.id,
-        null,
-        'awaiting_quote',
-        createdByUserId,
-        `Shipment created with ${total_packages} packages`
-      );
+      // Shipment created successfully (history logging disabled)
 
       logger.info('Shipment created successfully:', { 
         shipmentId: newShipment.id,
@@ -381,11 +418,11 @@ class WarehouseShipmentService {
   async updateShipmentStatus(
     shipmentId: string,
     newStatus: ShipmentStatus,
-    updatedByUserId: string,
+    updatedByUserId?: string,
     notes?: string
   ): Promise<ShipmentData> {
     try {
-      // Get current status
+      // Get current status for logging
       const { data: currentShipment, error: fetchError } = await supabase
         .from('shipments')
         .select('status')
@@ -408,26 +445,16 @@ class WarehouseShipmentService {
         .eq('id', shipmentId)
         .select()
         .single();
-
       if (error) {
         throw error;
       }
-
-      // Log status change
-      await this.logShipmentStatusChange(
-        shipmentId,
-        oldStatus,
-        newStatus,
-        updatedByUserId,
-        notes || `Status changed to ${newStatus}`
-      );
 
       // Update package statuses based on shipment status
       await this.updatePackageStatusesForShipment(shipmentId, newStatus);
 
       logger.info('Shipment status updated:', { 
         shipmentId,
-        oldStatus,
+        oldStatus: currentShipment.status,
         newStatus,
         updatedBy: updatedByUserId 
       });
@@ -466,16 +493,7 @@ class WarehouseShipmentService {
         throw error;
       }
 
-      // Log cost setting
-      if (updatedByUserId) {
-        await this.logShipmentStatusChange(
-          shipmentId,
-          'awaiting_quote',
-          'awaiting_payment',
-          updatedByUserId,
-          notes || `Cost set: $${totalCost}`
-        );
-      }
+      // Cost set successfully (history logging disabled)
 
       logger.info('Shipment cost set:', { 
         shipmentId,
@@ -505,8 +523,8 @@ class WarehouseShipmentService {
       }
 
       const total_shipments = shipments?.length || 0;
-      const pending_quote = shipments?.filter(s => s.status === 'awaiting_quote').length || 0;
-      const awaiting_payment = shipments?.filter(s => s.status === 'awaiting_payment').length || 0;
+      const pending_quote = shipments?.filter(s => s.status === 'pending').length || 0;
+      const processing = shipments?.filter(s => s.status === 'processing').length || 0;
       const in_transit = shipments?.filter(s => s.status === 'in_transit').length || 0;
 
       // Delivered this month
@@ -519,7 +537,7 @@ class WarehouseShipmentService {
 
       // Revenue calculations
       const paidShipments = shipments?.filter(s => 
-        ['confirmed', 'in_transit', 'delivered'].includes(s.status) && 
+        ['processing', 'shipped', 'in_transit', 'delivered'].includes(s.status) && 
         s.total_cost
       ) || [];
       
@@ -531,7 +549,7 @@ class WarehouseShipmentService {
       return {
         total_shipments,
         pending_quote,
-        awaiting_payment,
+        processing,
         in_transit,
         delivered_this_month,
         total_revenue,
@@ -565,15 +583,16 @@ class WarehouseShipmentService {
       let packageStatus: string | null = null;
 
       switch (shipmentStatus) {
-        case 'confirmed':
+        case 'processing':
+        case 'shipped':
         case 'in_transit':
           packageStatus = 'shipped';
           break;
+        case 'arrived':
+          packageStatus = 'arrived';
+          break;
         case 'delivered':
           packageStatus = 'delivered';
-          break;
-        case 'cancelled':
-          packageStatus = 'ready_for_shipment'; // Return to ready state
           break;
       }
 
@@ -602,36 +621,6 @@ class WarehouseShipmentService {
     }
   }
 
-  /**
-   * Log shipment status change
-   */
-  private async logShipmentStatusChange(
-    shipmentId: string,
-    fromStatus: ShipmentStatus | null,
-    toStatus: ShipmentStatus,
-    changedByUserId: string,
-    notes?: string
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('shipment_status_history')
-        .insert({
-          shipment_id: shipmentId,
-          from_status: fromStatus,
-          to_status: toStatus,
-          changed_by: changedByUserId,
-          notes: notes || null,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        logger.error('Failed to log shipment status change:', error);
-        // Don't throw error for logging failure
-      }
-    } catch (error) {
-      logger.error('Shipment status change logging error:', error);
-    }
-  }
 }
 
 // Export singleton instance

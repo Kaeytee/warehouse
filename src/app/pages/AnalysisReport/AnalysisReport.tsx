@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiBarChart2, FiPieChart, FiTrendingUp, FiCalendar, FiDownload, FiPackage, FiUsers, FiBox, FiActivity, FiArrowUp, FiArrowDown, FiLoader, FiRefreshCw } from 'react-icons/fi';
 import { AnalyticsService, type ShipmentAnalytics, type PackageAnalytics, type UserAnalytics } from '../../../services/AnalyticsService';
+import { useTheme, type ThemeType } from '../../../contexts/ThemeContext';
 
 interface MetricData {
   label: string;
@@ -15,6 +16,14 @@ const AnalysisReport: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  // Theme context for dynamic colors
+  const { setTheme, colors: themeColors } = useTheme();
+
+  // Update theme when report type changes
+  useEffect(() => {
+    setTheme(reportType as ThemeType);
+  }, [reportType, setTheme]);
 
   // Real analytics data state
   const [shipmentAnalytics, setShipmentAnalytics] = useState<ShipmentAnalytics | null>(null);
@@ -171,14 +180,6 @@ const AnalysisReport: React.FC = () => {
   };
 
 
-  const getReportColor = (type: string) => {
-    switch (type) {
-      case 'shipments': return { bg: 'bg-blue-500', gradient: 'from-blue-500 to-blue-600', light: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
-      case 'packages': return { bg: 'bg-purple-500', gradient: 'from-purple-500 to-purple-600', light: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' };
-      case 'users': return { bg: 'bg-emerald-500', gradient: 'from-emerald-500 to-emerald-600', light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
-      default: return { bg: 'bg-gray-500', gradient: 'from-gray-500 to-gray-600', light: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' };
-    }
-  };
 
   /**
    * Handle data export using real analytics data
@@ -206,7 +207,14 @@ const AnalysisReport: React.FC = () => {
   };
 
   const metrics = getMetricsForType();
-  const colors = getReportColor(reportType);
+  // Use theme colors instead of local colors
+  const colors = {
+    bg: themeColors.primary,
+    gradient: themeColors.gradient,
+    light: themeColors.light,
+    text: themeColors.text,
+    border: themeColors.border
+  };
 
   const MetricCard: React.FC<MetricData & { index: number }> = ({ label, value, change, changeLabel, index }) => (
     <div 
@@ -308,7 +316,15 @@ const AnalysisReport: React.FC = () => {
                   { value: 'users', label: 'Users', icon: FiUsers }
                 ].map(({ value, label, icon: Icon }) => {
                   const isActive = reportType === value;
-                  const typeColors = getReportColor(value);
+                  // Use theme colors for active state, or get preview colors for inactive
+                  const typeColors = isActive ? colors : (() => {
+                    switch (value) {
+                      case 'shipments': return { light: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
+                      case 'packages': return { light: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' };
+                      case 'users': return { light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
+                      default: return { light: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' };
+                    }
+                  })();
                   return (
                     <button
                       key={value}

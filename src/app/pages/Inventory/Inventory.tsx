@@ -42,7 +42,7 @@ import { WarehouseService } from '../../../services/WarehouseService';
  */
 const PackageManagement: React.FC = () => {
   // Authentication and user context
-  const { } = useWarehouseAuth();
+  const { isAuthenticated, userId } = useWarehouseAuth();
   
   // State management for package data and UI
   const [packages, setPackages] = useState<any[]>([]);
@@ -136,6 +136,12 @@ const PackageManagement: React.FC = () => {
    */
   const handleStatusUpdate = async (packageId: string, newStatus: string) => {
     try {
+      // Check user authentication
+      if (!isAuthenticated || !userId) {
+        setError('User authentication required');
+        return;
+      }
+
       await WarehouseService.updatePackageStatus(packageId, newStatus);
       
       // Refresh package data
@@ -158,6 +164,12 @@ const PackageManagement: React.FC = () => {
    */
   const handleBulkStatusUpdate = async (status: string) => {
     try {
+      // Check user authentication
+      if (!isAuthenticated || !userId) {
+        setError('User authentication required');
+        return;
+      }
+
       // Update all selected packages
       await Promise.all(
         selectedPackages.map(packageId => 
