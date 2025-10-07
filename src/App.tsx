@@ -8,6 +8,7 @@ import Dashboard from './app/pages/dashboard';
 import AppLayout from './components/layout/AppLayout';
 import PackageIntake from './app/pages/PackageIntake/PackageIntake';
 import CreateShipment from './app/pages/CreateShipment/CreateShipment';
+import Delivery from './app/pages/Delivery/Delivery';
 import ShipmentHistory from './app/pages/ShipmentHistory/ShipmentHistory';
 import AnalysisReport from './app/pages/AnalysisReport/AnalysisReport';
 import Inventory from './app/pages/Inventory/Inventory';
@@ -119,6 +120,16 @@ const AppRoutes: React.FC = () => {
           element={
             <RouteGuard requiredPermission="shipment_creation">
               <CreateShipment />
+            </RouteGuard>
+          } 
+        />
+        
+        {/* Delivery - Package pickup verification - All warehouse roles */}
+        <Route 
+          path="/delivery" 
+          element={
+            <RouteGuard requiredPermission="package_management">
+              <Delivery />
             </RouteGuard>
           } 
         />

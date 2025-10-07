@@ -166,7 +166,7 @@ const PackageIntake: React.FC = () => {
     setSubmitError('');
 
     try {
-      // Call the warehouse_package_intake function
+      // Call basic package intake function (codes generated later on shipment arrival)
       const { data, error } = await supabase.rpc('warehouse_package_intake', {
         p_user_suite_number: formData.suiteNumber.trim().toUpperCase(),
         p_description: formData.description.trim(),
@@ -181,8 +181,6 @@ const PackageIntake: React.FC = () => {
       if (error) {
         throw error;
       }
-
-      console.log('Response data:', data);
 
       if (data && !data.success) {
         throw new Error(data.error || 'Failed to process package intake');
@@ -235,6 +233,9 @@ const PackageIntake: React.FC = () => {
               <p className="text-sm text-green-700 mt-1">
                 Package ID: <span className="font-mono font-semibold">{createdPackage.package_id}</span> | 
                 Tracking: <span className="font-mono font-semibold">{createdPackage.tracking_number}</span>
+              </p>
+              <p className="text-xs text-green-600 mt-2">
+                ℹ️ Pickup code will be auto-generated when shipment arrives
               </p>
             </div>
           </div>

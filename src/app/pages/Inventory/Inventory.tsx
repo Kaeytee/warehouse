@@ -17,7 +17,7 @@ import {
   FiSearch, 
   FiEye,
   FiEdit3,
-  FiTruck,
+  FiSend,
   FiBox,
   FiBarChart,
   FiRefreshCw,
@@ -373,7 +373,7 @@ const PackageManagement: React.FC = () => {
         {/* Shipped Card */}
         <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
           <span className="absolute top-4 right-4 text-green-500 text-2xl">
-            <FiTruck />
+            <FiSend />
           </span>
           <span className="text-gray-500 text-base mb-2">Shipped</span>
           <span className="text-2xl font-bold text-[#0D1637]">{summary.shipped}</span>

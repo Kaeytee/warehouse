@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FiPackage, FiTruck, FiMapPin, FiCheck, FiLoader, FiAlertCircle, FiSearch, FiChevronRight, FiClock, FiUser, FiBox, FiCalendar } from 'react-icons/fi';
+import { FiPackage, FiSend, FiMapPin, FiCheck, FiLoader, FiAlertCircle, FiSearch, FiChevronRight, FiClock, FiUser, FiCalendar, FiFileText, FiDownload } from 'react-icons/fi';
 import { warehouseShipmentService, type ShipmentData, type ShipmentStatus } from '../../../services/warehouseShipmentService';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
+import WaybillViewer from '../../../components/warehouse/WaybillViewer';
+import { warehouseDocumentService } from '../../../services/warehouseDocumentService';
+import logo from '../../../assets/image.png';
 
 /**
  * Shipment interface matching the backend data structure
@@ -24,8 +27,6 @@ interface Shipment {
   service_type: string;
   created_at: string;
   updated_at: string;
-  customer_name?: string;
-  customer_email?: string;
   user_id: string;
 }
 
@@ -45,6 +46,10 @@ const ShipmentHistory: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalShipments, setTotalShipments] = useState(0);
   const itemsPerPage = 20;
+
+  // Document generation state
+  const [showWaybill, setShowWaybill] = useState<string | null>(null);
+  const [isGeneratingReceipts, setIsGeneratingReceipts] = useState<string>('');
 
   /**
    * Fetch shipments from Supabase backend
@@ -86,13 +91,11 @@ const ShipmentHistory: React.FC = () => {
         delivery_country: shipment.delivery_country,
         total_weight_lbs: shipment.total_weight,
         total_declared_value: shipment.total_value,
-        total_packages: 1, // Default value, will need to calculate from package_shipments table
+        total_packages: shipment.total_packages || shipment.packages?.length || 0,
         total_cost: shipment.shipping_cost,
         service_type: shipment.service_type,
         created_at: shipment.created_at,
         updated_at: shipment.updated_at,
-        customer_name: shipment.customer_name,
-        customer_email: shipment.customer_email,
         user_id: shipment.user_id
       }));
 
@@ -173,7 +176,7 @@ const ShipmentHistory: React.FC = () => {
         label: 'Processing'
       },
       shipped: {
-        icon: FiTruck,
+        icon: FiSend,
         color: 'text-purple-600',
         bg: 'bg-purple-50',
         border: 'border-purple-200',
@@ -218,10 +221,213 @@ const ShipmentHistory: React.FC = () => {
       processing: 'shipped', 
       shipped: 'in_transit',
       in_transit: 'arrived',
-      arrived: 'delivered', 
+      arrived: null, // Delivery must be done via Delivery page with code verification
       delivered: null
     };
     return flow[currentStatus];
+  };
+
+  /**
+   * Handle printing package receipts for a shipment
+   * Generates and opens all package receipts in print windows
+   */
+  const handlePrintPackageReceipts = async (shipmentId: string) => {
+    if (!userId) {
+      setError('User not authenticated');
+      return;
+    }
+
+    setIsGeneratingReceipts(shipmentId);
+    setError('');
+
+    try {
+      // Fetch full shipment details with packages
+      const shipmentDetails = await warehouseDocumentService.getConsolidatedShipmentDetails(shipmentId, userId);
+      
+      if (!shipmentDetails.packages || shipmentDetails.packages.length === 0) {
+        throw new Error('No packages found for this shipment');
+      }
+
+      // Generate receipt for each package and open print window
+      const receipts = await Promise.all(
+        shipmentDetails.packages.map(async (pkg: any) => {
+          try {
+            const receipt = await warehouseDocumentService.generatePackageIntakeReceipt(
+              pkg.id || pkg.package_uuid,
+              userId
+            );
+            return {
+              package: pkg,
+              receipt,
+              success: true
+            };
+          } catch (err) {
+            console.error(`Failed to generate receipt for ${pkg.package_id}:`, err);
+            return {
+              package: pkg,
+              receipt: null,
+              success: false,
+              error: err
+            };
+          }
+        })
+      );
+
+      const successfulReceipts = receipts.filter(r => r.success);
+      
+      if (successfulReceipts.length > 0) {
+        // Print each receipt individually
+        for (const item of successfulReceipts) {
+          if (!item.receipt) continue;
+          
+          const receiptData = item.receipt.receipt_data;
+          const printWindow = window.open('', '_blank');
+          
+          if (printWindow) {
+            printWindow.document.write(`
+              <html>
+              <head>
+                <title>Receipt - ${item.receipt.receipt_number}</title>
+                <style>
+                  @page { margin: 1cm; size: auto; }
+                  * { box-sizing: border-box; }
+                  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0.5cm; background: #f5f5f5; position: relative; font-size: 10pt; }
+                  .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 10vw; color: rgba(220, 38, 38, 0.05); font-weight: bold; z-index: -1; pointer-events: none; }
+                  .receipt { max-width: 100%; width: 100%; margin: 0 auto; background: white; padding: 1em; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; z-index: 1; }
+                  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #dc2626; padding-bottom: 0.5em; margin-bottom: 1em; }
+                  .header-left { flex: 1; }
+                  .header-left img { max-width: 20%; height: auto; }
+                  .header-right { flex: 1; text-align: right; }
+                  .header-right h1 { color: #dc2626; margin: 0 0 0.3em 0; font-size: 1.4em; }
+                  .header-right p { color: #666; margin: 0.1em 0; font-size: 0.75em; }
+                  .receipt-number { text-align: center; background: #dc2626; color: white; padding: 0.5em; margin: 0.5em 0; font-size: 1em; font-weight: bold; }
+                  .section { margin: 0.8em 0; }
+                  .section-title { background: #f3f4f6; padding: 0.5em; font-weight: bold; color: #1f2937; border-left: 3px solid #dc2626; margin-bottom: 0.5em; font-size: 0.9em; }
+                  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; }
+                  .info-item { padding: 0.3em 0; border-bottom: 1px solid #e5e7eb; }
+                  .info-label { font-weight: 600; color: #6b7280; font-size: 0.8em; }
+                  .info-value { color: #1f2937; font-size: 0.9em; margin-top: 0.2em; word-wrap: break-word; }
+                  .footer { margin-top: 1em; padding-top: 0.5em; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 0.7em; }
+                  @media print {
+                    @page { margin: 1cm; }
+                    body { background: white; padding: 0.5cm; margin: 0 !important; }
+                    html, body { margin: 0 !important; padding: 0 !important; }
+                    .receipt { box-shadow: none; max-width: 100%; }
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="watermark">VANGUARDCARGO</div>
+                <div class="receipt">
+                  <div class="header">
+                    <div class="header-left">
+                      <img src="${logo}" alt="VanguardCargo LLC" />
+                    </div>
+                    <div class="header-right">
+                      <h1>VANGUARD CARGO LLC</h1>
+                      <p>4700 Eisenhower Avenue ALX-E2</p>
+                      <p>Alexandria, VA 22304, USA</p>
+                      <p>Email: info@vanguardcargo.co</p>
+                      <p>Phone: 0303982320 | +233 544197819</p>
+                    </div>
+                  </div>
+                  
+                  <div class="receipt-number">
+                    Receipt #${item.receipt.receipt_number}
+                  </div>
+                  
+                  <div class="section">
+                    <div class="section-title">PACKAGE INFORMATION</div>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <div class="info-label">Package ID</div>
+                        <div class="info-value">${receiptData.package_details.package_id}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Tracking Number</div>
+                        <div class="info-value">${receiptData.package_details.tracking_number}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Description</div>
+                        <div class="info-value">${receiptData.package_details.description}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Weight</div>
+                        <div class="info-value">${receiptData.package_details.weight || 'N/A'} kg</div>
+                      </div>
+                      ${receiptData.package_details.store_name ? `
+                      <div class="info-item">
+                        <div class="info-label">Store</div>
+                        <div class="info-value">${receiptData.package_details.store_name}</div>
+                      </div>
+                      ` : ''}
+                      ${receiptData.package_details.vendor_name ? `
+                      <div class="info-item">
+                        <div class="info-label">Vendor</div>
+                        <div class="info-value">${receiptData.package_details.vendor_name}</div>
+                      </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                  
+                  <div class="section">
+                    <div class="section-title">CUSTOMER INFORMATION</div>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">${receiptData.customer_details.name}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Suite Number</div>
+                        <div class="info-value">${receiptData.customer_details.suite_number}</div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">${receiptData.customer_details.email}</div>
+                      </div>
+                      ${receiptData.customer_details.phone ? `
+                      <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">${receiptData.customer_details.phone}</div>
+                      </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                  
+                  <div class="footer">
+                    <p><strong>Generated:</strong> ${new Date(item.receipt.generated_at).toLocaleString()}</p>
+                    <p style="margin-top: 10px;">This is an official receipt from VanguardCargo Warehouse</p>
+                    <p>© 2025 VanguardCargo. All rights reserved.</p>
+                  </div>
+                </div>
+                
+                <script>
+                  window.onload = function() {
+                    setTimeout(function() {
+                      window.print();
+                    }, 500);
+                  };
+                </script>
+              </body>
+              </html>
+            `);
+            printWindow.document.close();
+          }
+          
+          // Delay between opening windows to prevent browser blocking
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        setSuccess(`Successfully opened ${successfulReceipts.length} receipt(s) for printing`);
+        setTimeout(() => setSuccess(''), 4000);
+      }
+
+    } catch (err) {
+      console.error('Error generating package receipts:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate package receipts');
+    } finally {
+      setIsGeneratingReceipts('');
+    }
   };
 
   // Filter and sort shipments (newest first for easy access)
@@ -230,7 +436,8 @@ const ShipmentHistory: React.FC = () => {
       const matchesSearch = searchTerm === '' || 
         shipment.shipment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (shipment.customer_name && shipment.customer_name.toLowerCase().includes(searchTerm.toLowerCase()));
+        shipment.delivery_city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.delivery_country.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus = statusFilter === 'all' || shipment.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -255,7 +462,7 @@ const ShipmentHistory: React.FC = () => {
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-3">
             <div className="p-2.5 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg shadow-blue-500/30">
-              <FiTruck className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              <FiSend className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight">
               Shipment History
@@ -290,30 +497,23 @@ const ShipmentHistory: React.FC = () => {
         )}
 
         {/* Status Overview Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {[
-            { key: 'all', label: 'All', icon: FiBox, gradient: 'from-gray-500 to-gray-600' },
-            { key: 'shipped', label: 'Shipped', icon: FiTruck, gradient: 'from-purple-500 to-purple-600' },
-            { key: 'in_transit', label: 'In Transit', icon: FiMapPin, gradient: 'from-blue-500 to-blue-600' },
-            { key: 'arrived', label: 'Arrived', icon: FiPackage, gradient: 'from-amber-500 to-amber-600' },
-            { key: 'delivered', label: 'Delivered', icon: FiCheck, gradient: 'from-emerald-500 to-emerald-600' }
-          ].map(({ key, label, icon: Icon, gradient }) => (
+            { key: 'in_transit', label: 'In Transit', icon: FiMapPin, bgColor: 'bg-gradient-to-br from-red-500 to-red-600' },
+            { key: 'delivered', label: 'Delivered', icon: FiCheck, bgColor: 'bg-gradient-to-br from-yellow-500 to-yellow-600' }
+          ].map(({ key, label, icon: Icon, bgColor }) => (
             <button
               key={key}
               onClick={() => setStatusFilter(key as any)}
-              className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 ${
-                statusFilter === key
-                  ? 'bg-white shadow-lg shadow-gray-200/50 scale-105 ring-2 ring-gray-900/5'
-                  : 'bg-white/60 hover:bg-white shadow hover:shadow-md hover:scale-102'
-              }`}
+              className={`relative overflow-hidden rounded-2xl p-6 sm:p-8 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${bgColor}`}
             >
-              <div className="flex flex-col items-start gap-2">
-                <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} shadow-md`}>
-                  <Icon className="w-4 h-4 text-white" />
+              <div className="flex flex-col items-start gap-3">
+                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm shadow-md">
+                  <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </div>
                 <div className="text-left w-full">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">{label}</p>
-                  <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-0.5">
+                  <p className="text-sm sm:text-base font-semibold text-white/90">{label}</p>
+                  <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-1">
                     {statusCounts[key as keyof typeof statusCounts]}
                   </p>
                 </div>
@@ -328,7 +528,7 @@ const ShipmentHistory: React.FC = () => {
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by tracking number, recipient, customer, or suite..."
+              placeholder="Search by tracking number, recipient, city, or country..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-0 rounded-xl text-gray-900 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
@@ -351,7 +551,7 @@ const ShipmentHistory: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 sm:p-16">
               <div className="text-center">
                 <div className="inline-flex p-4 rounded-2xl bg-gray-50 mb-4">
-                  <FiTruck className="w-8 h-8 text-gray-400" />
+                  <FiSend className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No shipments found</h3>
                 <p className="text-gray-500 max-w-sm mx-auto">
@@ -440,17 +640,6 @@ const ShipmentHistory: React.FC = () => {
 
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center">
-                          <FiBox className="w-4 h-4 text-gray-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-gray-500 mb-0.5">Customer</p>
-                          <p className="text-sm font-semibold text-gray-900 truncate">{shipment.customer_name || 'Unknown Customer'}</p>
-                          <p className="text-xs text-gray-600">ID: {shipment.user_id.substring(0, 8)}...</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center">
                           <FiMapPin className="w-4 h-4 text-gray-600" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -474,7 +663,7 @@ const ShipmentHistory: React.FC = () => {
                   {/* Expanded Details */}
                   {isExpanded && (
                     <div className="border-t border-gray-100 bg-gray-50/50 p-5 sm:p-6 animate-in slide-in-from-top duration-300">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-1">Created</p>
                           <div className="flex items-center gap-2 text-sm text-gray-900">
@@ -510,6 +699,40 @@ const ShipmentHistory: React.FC = () => {
                         <div>
                           <p className="text-xs font-medium text-gray-500 mb-1">Service Type</p>
                           <p className="text-sm font-semibold text-gray-900 capitalize">{shipment.service_type}</p>
+                        </div>
+                      </div>
+
+                      {/* Document Action Buttons */}
+                      <div className="border-t border-gray-200 pt-4">
+                        <p className="text-xs font-medium text-gray-500 mb-3">Shipment Documents</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <button
+                            onClick={() => setShowWaybill(shipment.id)}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                          >
+                            <FiFileText className="w-4 h-4" />
+                            <span className="text-sm font-medium">View Waybill</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => handlePrintPackageReceipts(shipment.id)}
+                            disabled={isGeneratingReceipts === shipment.id}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {isGeneratingReceipts === shipment.id ? (
+                              <>
+                                <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                                <span className="text-sm font-medium">Generating...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FiDownload className="w-4 h-4" />
+                                <span className="text-sm font-medium">
+                                  Print Receipts {shipment.total_packages > 0 ? `(${shipment.total_packages})` : ''}
+                                </span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -578,6 +801,15 @@ const ShipmentHistory: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Waybill Viewer Modal */}
+      {showWaybill && (
+        <WaybillViewer
+          shipmentId={showWaybill}
+          onClose={() => setShowWaybill(null)}
+          autoGenerate={true}
+        />
+      )}
     </div>
   );
 };

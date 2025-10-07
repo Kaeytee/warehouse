@@ -43,6 +43,8 @@ DECLARE
     package_user_id UUID;
     total_weight DECIMAL := 0;
     total_value DECIMAL := 0;
+    estimated_days INTEGER;
+    calculated_delivery_date TIMESTAMP;
 BEGIN
     -- Verify warehouse staff permissions
     IF NOT EXISTS (
@@ -83,6 +85,19 @@ BEGIN
     -- Generate tracking number for the shipment
     new_tracking_number := generate_tracking_number();
     
+    -- Calculate estimated delivery based on service type
+    -- Standard: 5-7 days, Express: 3-5 days, Overnight: 1-2 days
+    CASE p_service_type
+        WHEN 'express' THEN
+            estimated_days := 4;  -- Middle of 3-5 days
+        WHEN 'overnight' THEN
+            estimated_days := 2;  -- Middle of 1-2 days
+        ELSE  -- standard
+            estimated_days := 6;  -- Middle of 5-7 days
+    END CASE;
+    
+    calculated_delivery_date := NOW() + (estimated_days || ' days')::INTERVAL;
+    
     -- Insert new shipment
     INSERT INTO shipments (
         user_id,
@@ -95,7 +110,8 @@ BEGIN
         delivery_country,
         total_weight,
         total_value,
-        service_type
+        service_type,
+        estimated_delivery
     ) VALUES (
         package_user_id,
         new_tracking_number,
@@ -107,7 +123,8 @@ BEGIN
         p_delivery_country,
         total_weight,
         total_value,
-        p_service_type
+        p_service_type,
+        calculated_delivery_date
     ) RETURNING id INTO new_shipment_id;
     
     -- Update packages with shipment tracking number and status

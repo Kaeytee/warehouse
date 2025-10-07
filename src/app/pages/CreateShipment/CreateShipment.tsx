@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiPackage, FiMapPin, FiCalendar, FiCheck, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { FiPackage, FiMapPin, FiCalendar, FiLoader, FiAlertCircle, FiFileText, FiSend } from 'react-icons/fi';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import { supabase } from '../../../lib/supabase';
+import { warehouseDocumentService } from '../../../services/warehouseDocumentService';
+import WaybillViewer from '../../../components/warehouse/WaybillViewer';
+import ReceiptViewer from '../../../components/warehouse/ReceiptViewer';
+import ConsolidatedShipmentView from '../../../components/warehouse/ConsolidatedShipmentView';
+import logo from '../../../assets/image.png';
 
 /**
  * Package interface for received packages ready for shipment
@@ -38,6 +43,18 @@ const CreateShipment: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 
+  // Created shipment details
+  const [createdShipmentId, setCreatedShipmentId] = useState<string | null>(null);
+  const [createdTrackingNumber, setCreatedTrackingNumber] = useState<string>('');
+  const [createdPackageCount, setCreatedPackageCount] = useState<number>(0);
+
+  // Modal states
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [showWaybill, setShowWaybill] = useState(false);
+  const [showShipmentView, setShowShipmentView] = useState(false);
+  const [receipt, setReceipt] = useState<any>(null);
+  const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
+
   // Form state for shipment details
   const [formData, setFormData] = useState({
     recipientName: '',
@@ -45,8 +62,7 @@ const CreateShipment: React.FC = () => {
     deliveryAddress: '',
     deliveryCity: '',
     deliveryCountry: '',
-    serviceType: 'standard' as 'standard' | 'express' | 'overnight',
-    estimatedDelivery: ''
+    serviceType: 'standard' as 'standard' | 'express' | 'overnight'
   });
 
   /**
@@ -167,8 +183,47 @@ const CreateShipment: React.FC = () => {
         throw new Error(data.error || 'Failed to create shipment');
       }
 
-      // Success - show confirmation and reset form
+      // Success - store shipment details
       setSuccess(`Shipment created successfully! Tracking number: ${data.tracking_number}`);
+      setCreatedShipmentId(data.shipment_id);
+      setCreatedTrackingNumber(data.tracking_number);
+      setCreatedPackageCount(selectedPackages.size);
+      
+      // Generate individual package receipts first, then shipment receipt
+      try {
+        setIsGeneratingReceipt(true);
+        
+        // Step 1: Generate receipt for each package (using UUID, not package_id string)
+        const selectedPackageIds = Array.from(selectedPackages);
+        await Promise.all(
+          selectedPackageIds.map(async (packageUuid) => {
+            try {
+              await warehouseDocumentService.generatePackageIntakeReceipt(packageUuid, userId);
+            } catch (pkgError) {
+              console.error(`Failed to generate receipt for package ${packageUuid}:`, pkgError);
+            }
+          })
+        );
+        
+        // Step 2: Generate shipment receipt
+        const generatedReceipt = await warehouseDocumentService.generateShipmentReceipt(
+          data.shipment_id,
+          userId
+        );
+        setReceipt(generatedReceipt);
+        
+        // Auto-show receipt after 1.5 seconds
+        setTimeout(() => {
+          setShowReceipt(true);
+        }, 1500);
+      } catch (receiptError) {
+        console.error('Failed to generate receipt:', receiptError);
+        // Continue anyway, receipt generation is optional
+      } finally {
+        setIsGeneratingReceipt(false);
+      }
+
+      // Reset form
       setSelectedPackages(new Set());
       setFormData({
         recipientName: '',
@@ -176,17 +231,11 @@ const CreateShipment: React.FC = () => {
         deliveryAddress: '',
         deliveryCity: '',
         deliveryCountry: '',
-        serviceType: 'standard',
-        estimatedDelivery: ''
+        serviceType: 'standard'
       });
 
       // Refresh the packages list
       fetchReceivedPackages();
-
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => {
-        setSuccess('');
-      }, 5000);
 
     } catch (err: any) {
       console.error('Error creating shipment:', err);
@@ -202,7 +251,7 @@ const CreateShipment: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <FiPackage className="mr-3 text-blue-600" />
+            <FiPackage className="mr-3 text-red-600" />
             Create Shipment
           </h1>
           <p className="mt-2 text-gray-600">
@@ -220,12 +269,72 @@ const CreateShipment: React.FC = () => {
           </div>
         )}
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
-            <div className="flex">
-              <FiCheck className="h-5 w-5 text-green-400 mt-0.5 mr-3" />
-              <div className="text-green-700">{success}</div>
+        {/* Success Message with Actions */}
+        {success && createdShipmentId && (
+          <div className="mb-6 bg-green-50 border-2 border-green-500 rounded-lg p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <img src={logo} alt="Vanguard Cargo LLC" className="h-16 w-16 object-contain" />
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-red-700">VANGUARD CARGO LLC</h3>
+                <p className="text-sm text-green-800 mt-1 font-semibold">
+                  Shipment Created Successfully!
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Tracking Number: <span className="font-mono font-semibold text-lg">{createdTrackingNumber}</span>
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  {createdPackageCount} packages consolidated
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button
+                onClick={() => setShowShipmentView(true)}
+                disabled={isGeneratingReceipt}
+                className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center justify-center gap-2 text-sm font-medium disabled:bg-gray-400"
+              >
+                <FiSend />
+                View Details
+              </button>
+              <button
+                onClick={() => setShowWaybill(true)}
+                disabled={isGeneratingReceipt}
+                className="bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition flex items-center justify-center gap-2 text-sm font-medium disabled:bg-gray-400"
+              >
+                <FiFileText />
+                Waybill
+              </button>
+              <button
+                onClick={() => setShowReceipt(true)}
+                disabled={!receipt || isGeneratingReceipt}
+                className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm font-medium disabled:bg-gray-400"
+              >
+                {isGeneratingReceipt ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FiFileText />
+                    Receipt
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setSuccess('');
+                  setCreatedShipmentId(null);
+                  setCreatedTrackingNumber('');
+                  setCreatedPackageCount(0);
+                  setReceipt(null);
+                }}
+                className="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition text-sm font-medium"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
@@ -235,13 +344,13 @@ const CreateShipment: React.FC = () => {
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900 flex items-center">
-                <FiPackage className="mr-2 text-blue-600" />
+                <FiPackage className="mr-2 text-red-600" />
                 Available Packages ({receivedPackages.length})
               </h2>
               {receivedPackages.length > 0 && (
                 <button
                   onClick={handleSelectAll}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                  className="mt-2 text-sm text-red-600 hover:text-red-800"
                 >
                   {selectedPackages.size === receivedPackages.length ? 'Deselect All' : 'Select All'}
                 </button>
@@ -251,7 +360,7 @@ const CreateShipment: React.FC = () => {
             <div className="p-6">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <FiLoader className="animate-spin h-6 w-6 text-blue-600 mr-2" />
+                  <FiLoader className="animate-spin h-6 w-6 text-red-600 mr-2" />
                   <span className="text-gray-600">Loading packages...</span>
                 </div>
               ) : receivedPackages.length === 0 ? (
@@ -269,7 +378,7 @@ const CreateShipment: React.FC = () => {
                       key={pkg.id}
                       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                         selectedPackages.has(pkg.id)
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-red-500 bg-red-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => handlePackageSelection(pkg.id)}
@@ -281,7 +390,7 @@ const CreateShipment: React.FC = () => {
                               type="checkbox"
                               checked={selectedPackages.has(pkg.id)}
                               onChange={() => handlePackageSelection(pkg.id)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mr-3"
                             />
                             <div>
                               <h4 className="font-medium text-gray-900">{pkg.package_id}</h4>
@@ -329,7 +438,7 @@ const CreateShipment: React.FC = () => {
                       value={formData.recipientName}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
                       placeholder="Enter recipient's full name"
                     />
                   </div>
@@ -344,7 +453,7 @@ const CreateShipment: React.FC = () => {
                       name="recipientPhone"
                       value={formData.recipientPhone}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
                       placeholder="Enter phone number"
                     />
                   </div>
@@ -366,7 +475,7 @@ const CreateShipment: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       rows={3}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
                       placeholder="Enter complete delivery address"
                     />
                   </div>
@@ -383,7 +492,7 @@ const CreateShipment: React.FC = () => {
                         value={formData.deliveryCity}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
                         placeholder="Enter city"
                       />
                     </div>
@@ -399,7 +508,7 @@ const CreateShipment: React.FC = () => {
                         value={formData.deliveryCountry}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
                         placeholder="Enter country"
                       />
                     </div>
@@ -410,37 +519,24 @@ const CreateShipment: React.FC = () => {
               {/* Shipping Options */}
               <div>
                 <h3 className="text-md font-medium text-gray-900 mb-4">Shipping Options</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700">
-                      Service Type
-                    </label>
-                    <select
-                      id="serviceType"
-                      name="serviceType"
-                      value={formData.serviceType}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="standard">Standard</option>
-                      <option value="express">Express</option>
-                      <option value="overnight">Overnight</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="estimatedDelivery" className="block text-sm font-medium text-gray-700">
-                      Estimated Delivery Date
-                    </label>
-                    <input
-                      type="date"
-                      id="estimatedDelivery"
-                      name="estimatedDelivery"
-                      value={formData.estimatedDelivery}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700">
+                    Service Type
+                  </label>
+                  <select
+                    id="serviceType"
+                    name="serviceType"
+                    value={formData.serviceType}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="standard">Standard (5-7 business days)</option>
+                    <option value="express">Express (3-5 business days)</option>
+                    <option value="overnight">Overnight (1-2 business days)</option>
+                  </select>
+                  <p className="mt-2 text-sm text-gray-500">
+                    📅 Estimated delivery will be calculated automatically based on service type
+                  </p>
                 </div>
               </div>
 
@@ -452,7 +548,7 @@ const CreateShipment: React.FC = () => {
                   className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                     isSubmitting || selectedPackages.size === 0
                       ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                      : 'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
                   }`}
                 >
                   {isSubmitting ? (
@@ -472,6 +568,31 @@ const CreateShipment: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Waybill Viewer Modal */}
+      {showWaybill && createdShipmentId && (
+        <WaybillViewer
+          shipmentId={createdShipmentId}
+          onClose={() => setShowWaybill(false)}
+          autoGenerate={true}
+        />
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {showReceipt && receipt && (
+        <ReceiptViewer
+          receipt={receipt}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
+
+      {/* Consolidated Shipment View Modal */}
+      {showShipmentView && createdShipmentId && (
+        <ConsolidatedShipmentView
+          shipmentId={createdShipmentId}
+          onClose={() => setShowShipmentView(false)}
+        />
+      )}
     </div>
   );
 };

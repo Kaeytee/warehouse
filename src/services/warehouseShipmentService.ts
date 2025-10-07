@@ -20,6 +20,7 @@ export interface ShipmentData {
   delivery_country: string;
   total_weight: number | null; // This matches the database column
   total_value: number | null; // This matches the database column
+  total_packages: number | null; // This matches the database column
   shipping_cost: number | null;
   status: ShipmentStatus;
   estimated_delivery: string | null;
@@ -120,6 +121,7 @@ class WarehouseShipmentService {
           delivery_country,
           total_weight,
           total_value,
+          total_packages,
           shipping_cost,
           service_type,
           estimated_delivery,

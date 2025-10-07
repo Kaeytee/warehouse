@@ -221,24 +221,24 @@ const Dashboard: React.FC = () => {
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
           {/* Packages Received */}
-          <div className="group relative bg-gradient-to-br from-white via-white to-green-50/30 rounded-xl shadow-sm border border-gray-200/60 p-3 sm:p-6 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:border-green-200/60 overflow-hidden">
+          <div className="group relative bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg shadow-green-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/5 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500/10 rounded-full"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
             
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Packages Received</p>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Packages Received</p>
                   </div>
-                  <p className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
+                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
                     {dashboardMetrics?.receivedPackages || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Today's intake</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">Today's intake</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg shadow-green-500/25 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110">
+                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
                   <FiPackage className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
@@ -246,7 +246,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-end">
                 <button 
                   onClick={() => navigate('/intake')}
-                  className="text-xs sm:text-sm text-green-600 hover:text-green-700 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
+                  className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
                 >
                   <span className="hidden sm:inline">View Details</span>
                   <span className="sm:hidden">Details</span>
@@ -257,24 +257,24 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Packages Processing */}
-          <div className="group relative bg-gradient-to-br from-white via-white to-red-50/30 rounded-xl shadow-sm border border-gray-200/60 p-3 sm:p-6 hover:shadow-lg hover:shadow-red-500/10 transition-all duration-300 hover:border-red-200/60 overflow-hidden">
+          <div className="group relative bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg shadow-red-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-red-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-500/5 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500/10 rounded-full"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
             
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Processing</p>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Processing</p>
                   </div>
-                  <p className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
+                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
                     {dashboardMetrics?.processingPackages || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Ready to ship</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">Ready to ship</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg shadow-red-500/25 group-hover:shadow-red-500/40 transition-all duration-300 group-hover:scale-110">
+                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
                   <FiClock className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
@@ -282,7 +282,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-end">
                 <button 
                   onClick={() => navigate('/inventory')}
-                  className="text-xs sm:text-sm text-red-600 hover:text-red-700 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
+                  className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
                 >
                   <span className="hidden sm:inline">View Details</span>
                   <span className="sm:hidden">Details</span>
@@ -293,24 +293,24 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Active Shipments */}
-          <div className="group relative bg-gradient-to-br from-white via-white to-purple-50/30 rounded-xl shadow-sm border border-gray-200/60 p-3 sm:p-6 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 hover:border-purple-200/60 overflow-hidden">
+          <div className="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/5 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-500/10 rounded-full"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
             
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Active Shipments</p>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Active Shipments</p>
                   </div>
-                  <p className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
+                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
                     {dashboardMetrics?.inTransitShipments || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">In transit</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">In transit</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/25 group-hover:shadow-purple-500/40 transition-all duration-300 group-hover:scale-110">
+                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
                   <HiOutlinePaperAirplane className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
@@ -319,38 +319,38 @@ const Dashboard: React.FC = () => {
                 {hasRole('admin') || hasRole('superadmin') ? (
                   <button 
                     onClick={() => navigate('/shipments')}
-                    className="text-xs sm:text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
+                    className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
                   >
                     <span className="hidden sm:inline">View Details</span>
                     <span className="sm:hidden">Details</span>
                     <FiArrowRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover/btn:translate-x-0.5 transition-transform" />
                   </button>
                 ) : (
-                  <span className="text-xs sm:text-sm text-gray-400 font-medium">Access Restricted</span>
+                  <span className="text-xs sm:text-sm text-white/60 font-medium">Access Restricted</span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Pending Packages */}
-          <div className="group relative bg-gradient-to-br from-white via-white to-amber-50/30 rounded-xl shadow-sm border border-gray-200/60 p-3 sm:p-6 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 hover:border-amber-200/60 overflow-hidden">
+          {/* Received Packages */}
+          <div className="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/5 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-500/10 rounded-full"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
             
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-3 sm:mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Pending</p>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Received Packages</p>
                   </div>
-                  <p className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-1">
+                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
                     {dashboardMetrics?.pendingPackages || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">Awaiting processing</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">Awaiting processing</p>
                 </div>
-                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-all duration-300 group-hover:scale-110">
+                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
                   <FiAlertCircle className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
@@ -358,7 +358,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-end">
                 <button 
                   onClick={() => navigate('/inventory?status=pending')}
-                  className="text-xs sm:text-sm text-amber-600 hover:text-amber-700 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
+                  className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
                 >
                   <span className="hidden sm:inline">View Details</span>
                   <span className="sm:hidden">Details</span>

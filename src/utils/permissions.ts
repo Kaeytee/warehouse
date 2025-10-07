@@ -167,6 +167,7 @@ export function canAccessFeature(userRole: string, feature: string): boolean {
     'packages': 'canManagePackages',
     'inventory': 'canViewInventory',
     'intake': 'canProcessIntake',
+    'delivery': 'canManagePackages',
     'shipments': 'canManageShipments',
     'create-shipment': 'canCreateShipments',
     'analytics': 'canViewAnalytics',
@@ -205,7 +206,12 @@ export function getAllowedNavItems(userRole: string) {
   }
   
   if (permissions.canCreateShipments) {
-    navItems.push({ path: '/create-shipment', name: 'Create Shipment', icon: 'FiTruck' });
+    navItems.push({ path: '/create-shipment', name: 'Create Shipment', icon: 'FiSend' });
+  }
+  
+  // Delivery page - available to all warehouse roles
+  if (permissions.canManagePackages) {
+    navItems.push({ path: '/delivery', name: 'Delivery', icon: 'FiSend' });
   }
   
   // Advanced operations - admin and superadmin only
