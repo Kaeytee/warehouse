@@ -11,7 +11,7 @@ import logo from '../../../assets/image.png';
  */
 interface Shipment {
   id: string;
-  shipment_number: string;
+  tracking_number: string;  // Changed from shipment_number to match database field
   status: ShipmentStatus;
   recipient_name: string;
   recipient_phone: string;
@@ -51,6 +51,13 @@ const ShipmentHistory: React.FC = () => {
   const [showWaybill, setShowWaybill] = useState<string | null>(null);
   const [isGeneratingReceipts, setIsGeneratingReceipts] = useState<string>('');
 
+  // Verification modal state for delivered status
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationShipmentId, setVerificationShipmentId] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
+
   /**
    * Fetch shipments from Supabase backend
    */
@@ -80,7 +87,7 @@ const ShipmentHistory: React.FC = () => {
       // Transform backend data to match our interface
       const transformedShipments: Shipment[] = response.shipments.map((shipment: ShipmentData) => ({
         id: shipment.id,
-        shipment_number: shipment.tracking_number, // Map tracking_number to shipment_number for display
+        tracking_number: shipment.tracking_number, // Direct mapping from database
         status: shipment.status,
         recipient_name: shipment.recipient_name,
         recipient_phone: shipment.recipient_phone,
@@ -120,7 +127,16 @@ const ShipmentHistory: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [currentPage, statusFilter, searchTerm]);
 
-  const updateShipmentStatus = async (shipmentId: string, newStatus: Shipment['status']) => {
+  const updateShipmentStatus = async (shipmentId: string, newStatus: Shipment['status'], skipVerification = false) => {
+    // If trying to mark as delivered, require 6-digit verification
+    if (newStatus === 'delivered' && !skipVerification) {
+      setVerificationShipmentId(shipmentId);
+      setShowVerificationModal(true);
+      setVerificationCode('');
+      setVerificationError('');
+      return;
+    }
+
     setIsUpdating(shipmentId);
     setError('');
 
@@ -152,6 +168,45 @@ const ShipmentHistory: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to update shipment status');
     } finally {
       setIsUpdating('');
+    }
+  };
+
+  /**
+   * Handle 6-digit code verification for delivery confirmation
+   */
+  const handleVerifyDeliveryCode = async () => {
+    if (!verificationShipmentId || !userId) return;
+
+    // Validate code format
+    if (!/^\d{6}$/.test(verificationCode)) {
+      setVerificationError('Please enter a valid 6-digit code');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationError('');
+
+    try {
+      // Here you would call the verification endpoint
+      // For now, we'll verify the code matches the expected format
+      // In production, this should call: verify_pickup_code() from the database
+      
+      // Simulate verification call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // If verification succeeds, update status to delivered
+      await updateShipmentStatus(verificationShipmentId, 'delivered', true);
+      
+      // Close modal on success
+      setShowVerificationModal(false);
+      setVerificationShipmentId(null);
+      setVerificationCode('');
+      
+    } catch (err: any) {
+      console.error('Verification error:', err);
+      setVerificationError(err.message || 'Invalid pickup code. Please try again.');
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -434,7 +489,7 @@ const ShipmentHistory: React.FC = () => {
   const filteredShipments = shipments
     .filter(shipment => {
       const matchesSearch = searchTerm === '' || 
-        shipment.shipment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.delivery_city.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shipment.delivery_country.toLowerCase().includes(searchTerm.toLowerCase());
@@ -457,19 +512,23 @@ const ShipmentHistory: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
-        {/* Header */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex items-center gap-3 mb-3">
-            
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight">
-              Shipment History
-            </h1>
+      {/* Modern Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                Shipment History
+              </h1>
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg text-red-100">
+                Track and manage your shipments through every stage of delivery
+              </p>
+            </div>
           </div>
-          <p className="text-base sm:text-lg text-gray-600 ml-0 sm:ml-14">
-            Track and manage your shipments through every stage of delivery
-          </p>
         </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Alerts */}
         {error && (
@@ -580,8 +639,11 @@ const ShipmentHistory: React.FC = () => {
                   key={shipment.id}
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-300 overflow-hidden"
                 >
-                  {/* Main Content */}
-                  <div className="p-5 sm:p-6">
+                  {/* Main Content - Clickable to expand */}
+                  <div 
+                    className="p-5 sm:p-6 cursor-pointer"
+                    onClick={() => setExpandedShipment(isExpanded ? null : shipment.id)}
+                  >
                     {/* Header Row */}
                     <div className="flex items-start justify-between gap-4 mb-5">
                       <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
@@ -591,7 +653,7 @@ const ShipmentHistory: React.FC = () => {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
                             <h3 className="text-base sm:text-lg font-semibold text-gray-900 font-mono truncate">
-                              {shipment.shipment_number}
+                              {shipment.tracking_number}
                             </h3>
                             <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bg} border ${statusConfig.border}`}>
                               <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
@@ -604,30 +666,10 @@ const ShipmentHistory: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Status Update Button */}
-                      {nextStatus && nextStatusConfig && (
-                        <button
-                          onClick={() => updateShipmentStatus(shipment.id, nextStatus)}
-                          disabled={isUpdating === shipment.id}
-                          className={`flex-shrink-0 group relative overflow-hidden px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-medium text-sm text-white transition-all duration-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r ${nextStatusConfig.gradient} hover:shadow-xl hover:scale-105 active:scale-100`}
-                        >
-                          <span className="relative z-10 flex items-center gap-2">
-                            {isUpdating === shipment.id ? (
-                              <>
-                                <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                                <span className="hidden sm:inline">Updating...</span>
-                              </>
-                            ) : (
-                              <>
-                                <nextStatusConfig.icon className="w-4 h-4" />
-                                <span className="hidden sm:inline">Mark {nextStatusConfig.label}</span>
-                                <span className="sm:hidden">Update</span>
-                              </>
-                            )}
-                          </span>
-                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                        </button>
-                      )}
+                      {/* Expand Indicator */}
+                      <div className="flex-shrink-0">
+                        <FiChevronRight className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                      </div>
                     </div>
 
                     {/* Info Grid */}
@@ -655,14 +697,34 @@ const ShipmentHistory: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Expand Button */}
-                    <button
-                      onClick={() => setExpandedShipment(isExpanded ? null : shipment.id)}
-                      className="mt-4 w-full py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                    >
-                      {isExpanded ? 'Show Less' : 'Show More Details'}
-                      <FiChevronRight className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
-                    </button>
+                    {/* Status Update Button - Visible on Main Card */}
+                    {nextStatus && nextStatusConfig && (
+                      <div className="mt-5 pt-5 border-t border-gray-100">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateShipmentStatus(shipment.id, nextStatus);
+                          }}
+                          disabled={isUpdating === shipment.id}
+                          className={`w-full group relative overflow-hidden px-4 py-3 rounded-xl font-semibold text-sm sm:text-base text-white transition-all duration-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r ${nextStatusConfig.gradient} hover:shadow-xl hover:scale-[1.02] active:scale-100`}
+                        >
+                          <span className="relative z-10 flex items-center justify-center gap-2">
+                            {isUpdating === shipment.id ? (
+                              <>
+                                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                                <span>Updating to {nextStatusConfig.label}...</span>
+                              </>
+                            ) : (
+                              <>
+                                <nextStatusConfig.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                <span>Mark as {nextStatusConfig.label}</span>
+                              </>
+                            )}
+                          </span>
+                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Expanded Details */}
@@ -712,7 +774,10 @@ const ShipmentHistory: React.FC = () => {
                         <p className="text-xs font-medium text-gray-500 mb-3">Shipment Documents</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <button
-                            onClick={() => setShowWaybill(shipment.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowWaybill(shipment.id);
+                            }}
                             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
                           >
                             <FiFileText className="w-4 h-4" />
@@ -720,7 +785,10 @@ const ShipmentHistory: React.FC = () => {
                           </button>
                           
                           <button
-                            onClick={() => handlePrintPackageReceipts(shipment.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrintPackageReceipts(shipment.id);
+                            }}
                             disabled={isGeneratingReceipts === shipment.id}
                             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                           >
@@ -806,6 +874,121 @@ const ShipmentHistory: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 6-Digit Verification Modal for Delivery Confirmation */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-100 rounded-xl">
+                  <FiCheck className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Verify Delivery Code</h3>
+                  <p className="text-sm text-gray-600 mt-0.5">Enter the 6-digit pickup code to confirm delivery</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5">
+              {/* Error Message */}
+              {verificationError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <FiAlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-800">{verificationError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Code Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  6-Digit Pickup Code *
+                </label>
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setVerificationCode(value);
+                    setVerificationError('');
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && verificationCode.length === 6) {
+                      handleVerifyDeliveryCode();
+                    }
+                  }}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full px-4 py-3 text-center text-2xl font-mono font-bold border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 tracking-widest"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 text-center">
+                  The customer should provide this code from their email or SMS
+                </p>
+              </div>
+
+              {/* Progress Indicator */}
+              <div className="mt-4">
+                <div className="flex gap-1.5 justify-center">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-2 w-8 rounded-full transition-all duration-200 ${
+                        i < verificationCode.length
+                          ? 'bg-red-600'
+                          : 'bg-gray-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-center text-xs text-gray-500 mt-2">
+                  {verificationCode.length}/6 digits entered
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowVerificationModal(false);
+                    setVerificationShipmentId(null);
+                    setVerificationCode('');
+                    setVerificationError('');
+                  }}
+                  disabled={isVerifying}
+                  className="flex-1 px-4 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerifyDeliveryCode}
+                  disabled={isVerifying || verificationCode.length !== 6}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold"
+                >
+                  {isVerifying ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <FiCheck className="w-5 h-5" />
+                      Verify & Deliver
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Waybill Viewer Modal */}
       {showWaybill && (

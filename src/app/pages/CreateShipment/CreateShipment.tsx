@@ -7,6 +7,8 @@ import WaybillViewer from '../../../components/warehouse/WaybillViewer';
 import ReceiptViewer from '../../../components/warehouse/ReceiptViewer';
 import ConsolidatedShipmentView from '../../../components/warehouse/ConsolidatedShipmentView';
 import logo from '../../../assets/image.png';
+import PhoneInput, { parsePhoneNumber } from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 /**
  * Package interface for received packages ready for shipment
@@ -37,11 +39,13 @@ const CreateShipment: React.FC = () => {
   // Authentication and state management
   const { isAuthenticated, userId } = useWarehouseAuth();
   const [receivedPackages, setReceivedPackages] = useState<ProcessingPackage[]>([]);
+  const [filteredPackages, setFilteredPackages] = useState<ProcessingPackage[]>([]);
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Created shipment details
   const [createdShipmentId, setCreatedShipmentId] = useState<string | null>(null);
@@ -64,6 +68,9 @@ const CreateShipment: React.FC = () => {
     deliveryCountry: '',
     serviceType: 'standard' as 'standard' | 'express' | 'overnight'
   });
+
+  // Phone number state for international input
+  const [phoneValue, setPhoneValue] = useState<string>('');
 
   /**
    * Fetch packages with 'received' status on component mount
@@ -91,6 +98,7 @@ const CreateShipment: React.FC = () => {
       const transformedPackages: ProcessingPackage[] = data || [];
 
       setReceivedPackages(transformedPackages);
+      setFilteredPackages(transformedPackages);
     } catch (err: any) {
       console.error('Error fetching received packages:', err);
       setError('Failed to load received packages: ' + err.message);
@@ -116,22 +124,147 @@ const CreateShipment: React.FC = () => {
    * Handle select all packages toggle
    */
   const handleSelectAll = () => {
-    if (selectedPackages.size === receivedPackages.length) {
+    if (selectedPackages.size === filteredPackages.length) {
       setSelectedPackages(new Set());
     } else {
-      setSelectedPackages(new Set(receivedPackages.map((pkg: ProcessingPackage) => pkg.id)));
+      const allIds = new Set(filteredPackages.map(pkg => pkg.id));
+      setSelectedPackages(allIds);
     }
   };
 
   /**
-   * Handle form input changes
+   * Handle search query change and filter packages
    */
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Filter packages based on search query
+    if (query.trim() === '') {
+      setFilteredPackages(receivedPackages);
+    } else {
+      const lowerQuery = query.toLowerCase();
+      const filtered = receivedPackages.filter(pkg => 
+        pkg.user_name.toLowerCase().includes(lowerQuery) ||
+        pkg.suite_number.toLowerCase().includes(lowerQuery) ||
+        pkg.package_id.toLowerCase().includes(lowerQuery) ||
+        pkg.tracking_number.toLowerCase().includes(lowerQuery) ||
+        pkg.description?.toLowerCase().includes(lowerQuery) ||
+        pkg.store_name?.toLowerCase().includes(lowerQuery) ||
+        pkg.vendor_name?.toLowerCase().includes(lowerQuery)
+      );
+      setFilteredPackages(filtered);
+    }
+  };
+
+  /**
+   * Handle input changes for form fields
+   */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  /**
+   * Handle phone number change and auto-populate country
+   */
+  const handlePhoneChange = (value: string | undefined) => {
+    setPhoneValue(value || '');
+    setFormData(prev => ({
+      ...prev,
+      recipientPhone: value || ''
+    }));
+
+    // Auto-populate country based on phone number country code
+    if (value) {
+      try {
+        const phoneNumber = parsePhoneNumber(value);
+        if (phoneNumber && phoneNumber.country) {
+          const countryName = getCountryName(phoneNumber.country);
+          setFormData(prev => ({
+            ...prev,
+            deliveryCountry: countryName
+          }));
+        }
+      } catch (error) {
+        // Phone number not valid yet, ignore
+      }
+    }
+  };
+
+  /**
+   * Get full country name from country code
+   */
+  const getCountryName = (countryCode: string): string => {
+    const countryNames: { [key: string]: string } = {
+      'US': 'United States',
+      'GB': 'United Kingdom',
+      'CA': 'Canada',
+      'GH': 'Ghana',
+      'NG': 'Nigeria',
+      'KE': 'Kenya',
+      'ZA': 'South Africa',
+      'AU': 'Australia',
+      'DE': 'Germany',
+      'FR': 'France',
+      'IT': 'Italy',
+      'ES': 'Spain',
+      'NL': 'Netherlands',
+      'BE': 'Belgium',
+      'CH': 'Switzerland',
+      'AT': 'Austria',
+      'SE': 'Sweden',
+      'NO': 'Norway',
+      'DK': 'Denmark',
+      'FI': 'Finland',
+      'PL': 'Poland',
+      'CZ': 'Czech Republic',
+      'HU': 'Hungary',
+      'RO': 'Romania',
+      'BG': 'Bulgaria',
+      'GR': 'Greece',
+      'PT': 'Portugal',
+      'IE': 'Ireland',
+      'CN': 'China',
+      'JP': 'Japan',
+      'KR': 'South Korea',
+      'IN': 'India',
+      'BR': 'Brazil',
+      'MX': 'Mexico',
+      'AR': 'Argentina',
+      'CL': 'Chile',
+      'CO': 'Colombia',
+      'PE': 'Peru',
+      'VE': 'Venezuela',
+      'EC': 'Ecuador',
+      'UY': 'Uruguay',
+      'PY': 'Paraguay',
+      'BO': 'Bolivia',
+      'CR': 'Costa Rica',
+      'PA': 'Panama',
+      'SG': 'Singapore',
+      'MY': 'Malaysia',
+      'TH': 'Thailand',
+      'VN': 'Vietnam',
+      'PH': 'Philippines',
+      'ID': 'Indonesia',
+      'NZ': 'New Zealand',
+      'AE': 'United Arab Emirates',
+      'SA': 'Saudi Arabia',
+      'IL': 'Israel',
+      'TR': 'Turkey',
+      'EG': 'Egypt',
+      'MA': 'Morocco',
+      'TN': 'Tunisia',
+      'ET': 'Ethiopia',
+      'TZ': 'Tanzania',
+      'UG': 'Uganda',
+      'RW': 'Rwanda'
+    };
+    return countryNames[countryCode] || countryCode;
   };
 
   /**
@@ -365,24 +498,55 @@ const CreateShipment: React.FC = () => {
           {/* Package Selection Section */}
           <div className="bg-white shadow-xl shadow-gray-200/50 rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-6 py-5 bg-gradient-to-r from-red-50 to-white border-b-2 border-red-200">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
                   <div className="p-2 bg-red-100 rounded-xl">
                     <FiPackage className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
                     <div className="text-gray-900">Available Packages</div>
-                    <div className="text-sm font-normal text-gray-600">{receivedPackages.length} ready to ship</div>
+                    <div className="text-sm font-normal text-gray-600">
+                      {filteredPackages.length} of {receivedPackages.length} packages
+                    </div>
                   </div>
                 </h2>
               </div>
+              
+              {/* Search Input */}
               {receivedPackages.length > 0 && (
-                <button
-                  onClick={handleSelectAll}
-                  className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-all font-semibold text-sm shadow-sm hover:shadow-md"
-                >
-                  {selectedPackages.size === receivedPackages.length ? '✓ Deselect All' : '☐ Select All'}
-                </button>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FiPackage className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      placeholder="Search by user, suite, package ID, or tracking number..."
+                      className="block w-full pl-10 pr-3 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setFilteredPackages(receivedPackages);
+                        }}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-all font-semibold text-sm shadow-sm hover:shadow-md"
+                  >
+                    {selectedPackages.size === filteredPackages.length ? '✓ Deselect All' : '☐ Select All'}
+                  </button>
+                </div>
               )}
             </div>
             
@@ -400,9 +564,26 @@ const CreateShipment: React.FC = () => {
                     Packages need to be marked as 'received' before they can be shipped
                   </p>
                 </div>
+              ) : filteredPackages.length === 0 ? (
+                <div className="text-center py-8">
+                  <FiPackage className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No packages match your search</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Try searching with different keywords
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilteredPackages(receivedPackages);
+                    }}
+                    className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-all font-semibold text-sm"
+                  >
+                    Clear Search
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                  {receivedPackages.map((pkg: ProcessingPackage) => (
+                  {filteredPackages.map((pkg: ProcessingPackage) => (
                     <div
                       key={pkg.id}
                       className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
@@ -483,47 +664,108 @@ const CreateShipment: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Recipient Information */}
               <div>
-                <h3 className="text-md font-medium text-gray-900 mb-4">Recipient Information</h3>
-                <div className="grid grid-cols-1 gap-4">
+                <h3 className="text-md font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                  Recipient Information
+                </h3>
+                <div className="grid grid-cols-1 gap-5">
                   <div>
-                    <label htmlFor="recipientName" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="recipientName" className="block text-sm font-semibold text-gray-700 mb-2">
                       Recipient Name *
                     </label>
-                    <input
-                      type="text"
-                      id="recipientName"
-                      name="recipientName"
-                      value={formData.recipientName}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-                      placeholder="Enter recipient's full name"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="recipientName"
+                        name="recipientName"
+                        value={formData.recipientName}
+                        onChange={handleInputChange}
+                        required
+                        className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300"
+                        placeholder="Enter recipient's full name"
+                      />
+                    </div>
                   </div>
                   
                   <div>
-                    <label htmlFor="recipientPhone" className="block text-sm font-medium text-gray-700">
-                      Recipient Phone
+                    <label htmlFor="recipientPhone" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Recipient Phone *
                     </label>
-                    <input
-                      type="tel"
-                      id="recipientPhone"
-                      name="recipientPhone"
-                      value={formData.recipientPhone}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-                      placeholder="Enter phone number"
+                    <PhoneInput
+                      international
+                      defaultCountry="US"
+                      value={phoneValue}
+                      onChange={handlePhoneChange}
+                      className="phone-input-professional"
+                      placeholder="Enter phone number with country code"
+                      style={{
+                        width: '100%'
+                      }}
                     />
+                    <style>{`
+                      .phone-input-professional .PhoneInputInput {
+                        padding: 0.75rem 1rem;
+                        border: 2px solid #E5E7EB;
+                        border-radius: 0.75rem;
+                        width: 100%;
+                        font-size: 1rem;
+                        line-height: 1.5;
+                        transition: all 0.2s ease-in-out;
+                        color: #111827;
+                        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                      }
+                      .phone-input-professional .PhoneInputInput:hover {
+                        border-color: #D1D5DB;
+                      }
+                      .phone-input-professional .PhoneInputInput:focus {
+                        outline: none;
+                        border-color: #EF4444;
+                        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+                      }
+                      .phone-input-professional .PhoneInputInput::placeholder {
+                        color: #9CA3AF;
+                      }
+                      .phone-input-professional .PhoneInputCountrySelect {
+                        padding: 0.75rem;
+                        border: 2px solid #E5E7EB;
+                        border-radius: 0.75rem 0 0 0.75rem;
+                        background-color: #F9FAFB;
+                        font-size: 1rem;
+                        transition: all 0.2s ease-in-out;
+                      }
+                      .phone-input-professional .PhoneInputCountrySelect:hover {
+                        background-color: #F3F4F6;
+                        border-color: #D1D5DB;
+                      }
+                      .phone-input-professional .PhoneInputCountrySelect:focus {
+                        outline: none;
+                        border-color: #EF4444;
+                        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+                      }
+                      .phone-input-professional .PhoneInputCountryIcon {
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        margin-right: 0.5rem;
+                        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                      }
+                      .phone-input-professional {
+                        display: flex;
+                        gap: 0;
+                      }
+                    `}</style>
                   </div>
                 </div>
               </div>
 
               {/* Delivery Address */}
               <div>
-                <h3 className="text-md font-medium text-gray-900 mb-4">Delivery Address</h3>
-                <div className="space-y-4">
+                <h3 className="text-md font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                  Delivery Address
+                </h3>
+                <div className="space-y-5">
                   <div>
-                    <label htmlFor="deliveryAddress" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="deliveryAddress" className="block text-sm font-semibold text-gray-700 mb-2">
                       Street Address *
                     </label>
                     <textarea
@@ -533,14 +775,14 @@ const CreateShipment: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       rows={3}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                      className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300 resize-none"
                       placeholder="Enter complete delivery address"
                     />
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label htmlFor="deliveryCity" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="deliveryCity" className="block text-sm font-semibold text-gray-700 mb-2">
                         City *
                       </label>
                       <input
@@ -550,13 +792,13 @@ const CreateShipment: React.FC = () => {
                         value={formData.deliveryCity}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                        className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 placeholder-gray-400 hover:border-gray-300"
                         placeholder="Enter city"
                       />
                     </div>
                     
                     <div>
-                      <label htmlFor="deliveryCountry" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="deliveryCountry" className="block text-sm font-semibold text-gray-700 mb-2">
                         Country *
                       </label>
                       <input
@@ -564,10 +806,10 @@ const CreateShipment: React.FC = () => {
                         id="deliveryCountry"
                         name="deliveryCountry"
                         value={formData.deliveryCountry}
-                        onChange={handleInputChange}
+                        readOnly
                         required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
-                        placeholder="Enter country"
+                        className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm bg-gray-50 text-gray-700 cursor-not-allowed"
+                        placeholder="Select phone country code first"
                       />
                     </div>
                   </div>
@@ -576,9 +818,12 @@ const CreateShipment: React.FC = () => {
 
               {/* Shipping Options */}
               <div>
-                <h3 className="text-md font-medium text-gray-900 mb-4">Shipping Options</h3>
+                <h3 className="text-md font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-green-600 rounded-full"></div>
+                  Shipping Options
+                </h3>
                 <div>
-                  <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="serviceType" className="block text-sm font-semibold text-gray-700 mb-2">
                     Service Type
                   </label>
                   <select
@@ -586,7 +831,7 @@ const CreateShipment: React.FC = () => {
                     name="serviceType"
                     value={formData.serviceType}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                    className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 bg-white hover:border-gray-300 cursor-pointer"
                   >
                     <option value="standard">Standard (5-7 business days)</option>
                     <option value="express">Express (3-5 business days)</option>

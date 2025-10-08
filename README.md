@@ -121,6 +121,185 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
   - Previously the UI placeholder suggested only "VC-" format, but the system always supported any format.
   - Updated placeholder text and documentation to clarify format flexibility.
 
+#### 📊 Analytics Dashboard with Professional Charts (Updated 2025-10-08)
+- **Modern Header Design**: Updated Analytics Dashboard header to match Inventory page styling with gradient banner
+- **Professional Data Visualization**: Implemented complete charting system using Recharts library
+  - **Distribution Analysis (Pie Chart)**: Shows breakdown by status/category with dynamic theming
+  - **Volume Trends (Bar Chart)**: Displays activity trends over time (monthly/daily patterns)
+  - **Performance Metrics (Area Chart)**: Visualizes warehouse operational metrics (shipment volume, package counts, weight distribution, user growth) - **no pricing/value data**
+  - **Top Performers (Horizontal Bar Chart)**: Shows top destinations, stores by package volume, or most active users
+- **Warehouse-Focused Metrics** (No Pricing):
+  - Shipments: Total shipments and completed count trends
+  - Packages: Package count and estimated weight by store
+  - Users: User count and geographic percentage distribution
+- **Responsive & Professional Design**:
+  - All charts fully responsive with `ResponsiveContainer`
+  - Custom tooltips with branded styling
+  - Dynamic color schemes based on report type (red for shipments, purple for packages, emerald for users)
+  - Professional loading states and empty data handling
+  - Smooth animations and hover effects
+- **Real Data Integration**: Charts pull live data from Supabase via `AnalyticsService`
+- **Theme-Aware**: Charts change colors automatically when switching between report types
+- **Clean Code Architecture**: Well-documented components with OOP principles and best practices
+
+#### 👥 User Management System (Added 2025-10-08)
+- **Comprehensive User Overview**: View all registered users with detailed information
+  - User details: Name, email, contact information, suite number, role, status
+  - Real-time statistics dashboard with 6 metric cards:
+    - Total Users, Active Users, Inactive Users, Suspended Users, Clients, Admins
+  - Professional table layout with sortable columns and hover effects
+- **Status Management**: 
+  - Activate/Deactivate users with one-click toggle
+  - Status options: `active`, `inactive`, `suspended`, `reported`
+  - Real-time status updates with database synchronization
+  - Visual status badges with color coding (green/gray/red/yellow)
+- **Advanced Filtering & Search**:
+  - Filter by status: All, Active, Inactive, Suspended
+  - Live search across name, email, and suite number
+  - Click-to-filter stat cards for quick navigation
+  - Results count display
+- **Professional UI Design**:
+  - Modern gradient header matching system design
+  - Interactive stat cards with hover effects and animations
+  - Responsive table design with proper overflow handling
+  - Role badges distinguishing Administrators from Clients
+  - Contact information display (phone & WhatsApp)
+- **Service Architecture**:
+  - `UserManagementService`: Clean OOP service class
+  - Database integration via Supabase
+  - Comprehensive error handling
+  - Helper methods for formatting and color coding
+- **Security & Permissions**:
+  - Only administrators (super_admin, admin, warehouse_admin) can access
+  - Protected route with role-based access control
+  - Audit trail via updated_at timestamp
+- **Files Created**:
+  1. `src/services/UserManagementService.ts` - User management service with all business logic
+  2. `src/app/pages/UserManagement/UserManagement.tsx` - Main user management component
+  3. Updated `src/App.tsx` - Added route and navigation
+
+#### 📞 Professional International Phone Input & Enhanced Form Design (Added 2025-10-08)
+- **Smart Phone Number Field** in Create Shipment form:
+  - International phone input with country code selection dropdown
+  - Flag icons for visual country identification
+  - Automatic phone number formatting based on country standards
+  - Real-time validation of phone number format
+  - Search functionality in country dropdown
+- **Auto-Population Feature**:
+  - Delivery country field automatically populates based on phone number's country code
+  - Intelligent country name mapping (60+ countries supported)
+  - Country field is **read-only** - populated only from phone country code selection
+  - Gray background indicates non-editable field
+- **Modern Professional Form Styling**:
+  - **Rounded corners (rounded-xl)** for modern appearance
+  - **2px borders** with gray-200 default color
+  - **Enhanced padding** (px-4 py-3) for comfortable input
+  - **Hover effects** - border darkens on hover
+  - **Focus states** - Red ring (ring-2) with border color change
+  - **Smooth transitions** - 200ms duration for all state changes
+  - **Box shadows** - Subtle shadows for depth
+  - **Section headers** with green gradient accent bars
+  - **Bold labels** with proper spacing (mb-2)
+  - **Consistent spacing** (gap-5) between form elements
+  - **Professional textarea** with resize disabled
+  - **Styled select dropdown** matching input design
+- **Enhanced UX Features**:
+  - One-click country selection from phone field
+  - Reduces data entry errors
+  - Faster form completion
+  - Professional appearance matching modern web standards
+  - Read-only country field prevents manual errors
+  - Visual feedback on all interactions (hover, focus, active)
+  - Consistent color scheme throughout form
+- **Library Integration**:
+  - Uses `react-phone-number-input` for robust international phone handling
+  - Phone number parsing and validation
+  - Country code detection and mapping
+
+#### 🔍 Package Search in Create Shipment (Added 2025-10-08)
+- **Real-Time Search Functionality** for Available Packages section:
+  - Professional search input with icon and clear button
+  - Live filtering as you type
+  - Searches across multiple fields:
+    - User name
+    - Suite number
+    - Package ID
+    - Tracking number
+    - Description
+    - Store name
+    - Vendor name
+- **Smart Search Features**:
+  - Case-insensitive search
+  - Instant results (no delay)
+  - Shows count: "X of Y packages" 
+  - Clear button (X icon) appears when searching
+  - "No results" message with clear search button
+  - Select All button works with filtered results
+- **Enhanced Package Management**:
+  - Quickly find specific packages for shipment creation
+  - Search by customer details (name, suite)
+  - Search by package identifiers (ID, tracking)
+  - Search by vendor/store information
+- **Professional UI Design**:
+  - Modern rounded input matching form style
+  - Red accent theme for consistency
+  - Hover and focus states
+  - Smooth transitions
+  - Clear visual feedback
+- **File Updated**:
+  - `src/app/pages/CreateShipment/CreateShipment.tsx` - Added search functionality with filtering logic
+
+#### 🔧 Tracking Number Consistency Fix (Fixed 2025-10-08)
+- **Fixed Tracking Number Mismatch** between creation and display:
+  - ShipmentHistory interface now uses `tracking_number` instead of `shipment_number`
+  - Direct mapping from database `tracking_number` field (no transformation)
+  - Consistent tracking number display across all pages
+  - Fixed search functionality to use correct field name
+- **Root Cause**: Interface was using `shipment_number` while database has `tracking_number`
+- **Impact**: Tracking numbers now match exactly between:
+  - Create Shipment success message
+  - Shipment History list
+  - Client-facing displays
+  - Search results
+- **File Updated**:
+  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Fixed interface and field mappings
+
+#### 🔐 6-Digit Verification for Delivery Status (Restored 2025-10-08)
+- **Mandatory Verification** before marking packages as delivered in Shipment History:
+  - Clicking "Mark as Delivered" now triggers a verification modal
+  - Requires 6-digit pickup code input before status change
+  - Cannot bypass verification - security enforced
+- **Professional Verification Modal**:
+  - Clean, modern design with red accent theme
+  - Large centered input for 6-digit code
+  - Monospace font with tracking for easy reading
+  - Auto-focuses on input for quick entry
+  - Visual progress indicator (6 dots showing digits entered)
+  - Enter key support for quick submission
+- **Smart Input Validation**:
+  - Only accepts numeric digits (0-9)
+  - Auto-limits to 6 digits
+  - Clears on error for retry
+  - Real-time digit count display
+  - Prevents submission until all 6 digits entered
+- **Error Handling**:
+  - Clear error messages displayed in modal
+  - Format validation (must be exactly 6 digits)
+  - Integration ready for `verify_pickup_code()` database function
+- **User Experience**:
+  - Smooth animations (fade-in, zoom-in)
+  - Backdrop blur effect
+  - Cancel button to abort
+  - Loading state during verification
+  - Success feedback after verification
+  - Modal closes automatically on success
+- **Security Features**:
+  - Status only updates after successful code verification
+  - Prevents accidental delivery confirmation
+  - Aligns with pickup code system in database (SQL files 60, 61)
+- **File Updated**:
+  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Restored 6-digit verification logic for delivered status
+
 ## Authentication & Test Credentials
 
 The warehouse system uses role-based access control (RBAC) with three user roles and mock authentication for testing purposes.

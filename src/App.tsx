@@ -13,6 +13,7 @@ import ShipmentHistory from './app/pages/ShipmentHistory/ShipmentHistory';
 import AnalysisReport from './app/pages/AnalysisReport/AnalysisReport';
 import Inventory from './app/pages/Inventory/Inventory';
 import About from './app/pages/About/About';
+import UserManagement from './app/pages/UserManagement/UserManagement';
 import RouteGuard from './components/RouteGuard';
 import UnauthorizedPage from './components/UnauthorizedPage';
 // import GroupManagementDashboard from './app/pages/GroupManagement/GroupManagementDashboard'; // Removed from routing
@@ -172,10 +173,7 @@ const AppRoutes: React.FC = () => {
           path="/users" 
           element={
             <RouteGuard requiredPermission="user_management">
-              <div className="p-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">User Management</h1>
-                <p className="text-gray-600">User management functionality coming soon...</p>
-              </div>
+              <UserManagement />
             </RouteGuard>
           } 
         />

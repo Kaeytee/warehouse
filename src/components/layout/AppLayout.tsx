@@ -69,7 +69,7 @@ const AppLayout: React.FC = () => {
           >
             <FiMenu size={24} />
           </button>
-          <h1 className="ml-4 text-lg font-semibold text-gray-800">Vanguard Cargo.</h1>
+          <h1 className="ml-4 text-lg font-semibold text-gray-800">Vanguard Cargo</h1>
         </div>
         
         {/* Top navigation bar - hidden on mobile or integrated above */}

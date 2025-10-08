@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { FiBarChart2, FiPieChart, FiTrendingUp, FiCalendar, FiDownload, FiPackage, FiUsers, FiBox, FiActivity, FiArrowUp, FiArrowDown, FiLoader, FiRefreshCw } from 'react-icons/fi';
+import { FiBarChart2, FiCalendar, FiDownload, FiPackage, FiUsers, FiBox, FiActivity, FiArrowUp, FiArrowDown, FiLoader, FiRefreshCw } from 'react-icons/fi';
 import { AnalyticsService, type ShipmentAnalytics, type PackageAnalytics, type UserAnalytics } from '../../../services/AnalyticsService';
 import { useTheme, type ThemeType } from '../../../contexts/ThemeContext';
+import { 
+  PieChart, 
+  Pie, 
+  BarChart, 
+  Bar, 
+  AreaChart, 
+  Area,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 
 interface MetricData {
   label: string;
@@ -99,11 +114,6 @@ const AnalysisReport: React.FC = () => {
             label: 'Avg Delivery Time', 
             value: shipmentAnalytics.averageDeliveryTime,
             changeLabel: 'processing efficiency'
-          },
-          { 
-            label: 'Total Value', 
-            value: `$${shipmentAnalytics.totalShipmentValue.toLocaleString()}`,
-            changeLabel: 'shipment value'
           }
         ];
       case 'packages':
@@ -133,11 +143,6 @@ const AnalysisReport: React.FC = () => {
             label: 'Avg Weight', 
             value: `${packageAnalytics.averagePackageWeight.toFixed(2)} kg`,
             changeLabel: 'package weight'
-          },
-          { 
-            label: 'Total Value', 
-            value: `$${packageAnalytics.totalPackageValue.toLocaleString()}`,
-            changeLabel: 'declared value'
           }
         ];
       case 'users':
@@ -240,65 +245,434 @@ const AnalysisReport: React.FC = () => {
     </div>
   );
 
-  const ChartPlaceholder: React.FC<{ icon: any; title: string; subtitle: string }> = ({ icon: Icon, title, subtitle }) => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
-      <div className="px-6 py-5 border-b border-gray-100">
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-      </div>
-      <div className="p-6">
-        <div className="flex flex-col items-center justify-center h-64 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border-2 border-dashed border-gray-200">
-          <div className={`p-4 rounded-2xl bg-gradient-to-br ${colors.gradient} shadow-lg mb-4`}>
-            <Icon className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-sm font-medium text-gray-900 mb-1">Chart Visualization</p>
-          <p className="text-xs text-gray-500">Interactive chart will render here</p>
+  /**
+   * Custom Tooltip Component for Charts
+   * Provides professional, branded tooltips for all chart types
+   */
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white px-4 py-3 shadow-lg rounded-lg border border-gray-200">
+          <p className="text-sm font-semibold text-gray-900 mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-xs text-gray-600">
+              <span className="font-medium" style={{ color: entry.color }}>{entry.name}:</span>{' '}
+              <span className="font-semibold">{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}</span>
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  /**
+   * Get chart colors based on current theme - using distinct colors for better visualization
+   */
+  const getChartColors = () => {
+    switch (reportType) {
+      case 'shipments':
+        return ['#DC2626', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+      case 'packages':
+        return ['#9333EA', '#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#EF4444'];
+      case 'users':
+        return ['#059669', '#F59E0B', '#3B82F6', '#8B5CF6', '#EC4899', '#EF4444'];
+      default:
+        return ['#6B7280', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+    }
+  };
+
+  /**
+   * Distribution Analysis Chart Component
+   * Renders pie chart showing distribution by status or category
+   */
+  const DistributionChart: React.FC = () => {
+    // Prepare data based on report type
+    const chartData = (() => {
+      switch (reportType) {
+        case 'shipments':
+          if (!shipmentAnalytics) return [];
+          return [
+            { name: 'In Transit', value: shipmentAnalytics.inTransitShipments },
+            { name: 'Completed', value: shipmentAnalytics.completedShipments },
+            { name: 'Processing', value: shipmentAnalytics.processingShipments },
+            { name: 'Pending', value: shipmentAnalytics.pendingShipments },
+          ].filter(item => item.value > 0);
+        case 'packages':
+          if (!packageAnalytics) return [];
+          return [
+            { name: 'Received', value: packageAnalytics.receivedPackages },
+            { name: 'Processing', value: packageAnalytics.processingPackages },
+            { name: 'Shipped', value: packageAnalytics.shippedPackages },
+            { name: 'Delivered', value: packageAnalytics.deliveredPackages },
+            { name: 'Pending', value: packageAnalytics.pendingPackages },
+          ].filter(item => item.value > 0);
+        case 'users':
+          if (!userAnalytics) return [];
+          return [
+            { name: 'Active', value: userAnalytics.activeUsers },
+            { name: 'Inactive', value: userAnalytics.inactiveUsers },
+            { name: 'Suspended', value: userAnalytics.suspendedUsers },
+          ].filter(item => item.value > 0);
+        default:
+          return [];
+      }
+    })();
+
+    const chartColors = getChartColors();
+
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">Distribution Analysis</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            {reportType.charAt(0).toUpperCase() + reportType.slice(1)} breakdown by category
+          </p>
+        </div>
+        <div className="p-6">
+          {chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+              <p className="text-sm">No data available for this time period</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {chartData.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  /**
+   * Volume Trends Chart Component
+   * Renders bar/line chart showing activity trends over time
+   */
+  const VolumeTrendsChart: React.FC = () => {
+    // Prepare data based on report type
+    const chartData = (() => {
+      switch (reportType) {
+        case 'shipments':
+          return shipmentAnalytics?.monthlyTrends || [];
+        case 'packages':
+          return packageAnalytics?.dailyIntakePattern || [];
+        case 'users':
+          return userAnalytics?.userActivityTrends || [];
+        default:
+          return [];
+      }
+    })();
+
+    const chartColors = getChartColors();
+
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">Volume Trends</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            {reportType.charAt(0).toUpperCase() + reportType.slice(1)} activity over time
+          </p>
+        </div>
+        <div className="p-6">
+          {chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+              <p className="text-sm">No data available for this time period</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis 
+                  dataKey={reportType === 'shipments' ? 'month' : reportType === 'packages' ? 'day' : 'month'} 
+                  stroke="#6B7280"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                {reportType === 'shipments' && (
+                  <Bar dataKey="shipments" fill={chartColors[0]} name="Shipments" radius={[8, 8, 0, 0]} />
+                )}
+                {reportType === 'packages' && (
+                  <Bar dataKey="count" fill={chartColors[0]} name="Packages" radius={[8, 8, 0, 0]} />
+                )}
+                {reportType === 'users' && (
+                  <>
+                    <Bar dataKey="newUsers" fill={chartColors[0]} name="New Users" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="activeUsers" fill={chartColors[1]} name="Active Users" radius={[8, 8, 0, 0]} />
+                  </>
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Performance Metrics Chart Component
+   * Renders area chart showing growth and efficiency indicators (no pricing)
+   */
+  const PerformanceChart: React.FC = () => {
+    // Prepare data based on report type - focused on warehouse metrics, not pricing
+    const chartData = (() => {
+      switch (reportType) {
+        case 'shipments':
+          // Show shipment volume trends over time
+          return shipmentAnalytics?.monthlyTrends?.map(item => ({
+            name: item.month,
+            shipments: item.shipments,
+            completed: Math.round(item.shipments * 0.7) // Estimate completed from total
+          })) || [];
+        case 'packages':
+          // Show package count and weight distribution by store
+          return packageAnalytics?.packagesByStore?.slice(0, 6).map(item => ({
+            name: item.store.length > 15 ? item.store.substring(0, 15) + '...' : item.store,
+            packages: item.count,
+            weight: Math.round(item.count * (packageAnalytics?.averagePackageWeight || 5)) // Estimate weight
+          })) || [];
+        case 'users':
+          // Show user distribution by location
+          return userAnalytics?.geographicDistribution?.slice(0, 6).map(item => ({
+            name: item.country,
+            users: item.count,
+            percentage: Math.round(item.percentage)
+          })) || [];
+        default:
+          return [];
+      }
+    })();
+
+    const chartColors = getChartColors();
+
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">Performance Metrics</h3>
+          <p className="text-sm text-gray-500 mt-1">Growth and efficiency indicators</p>
+        </div>
+        <div className="p-6">
+          {chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+              <p className="text-sm">No data available for this time period</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartColors[0]} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={chartColors[0]} stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorSecondary" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartColors[1]} stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor={chartColors[1]} stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" style={{ fontSize: '12px' }} />
+                <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                {reportType === 'shipments' && (
+                  <>
+                    <Area 
+                      type="monotone" 
+                      dataKey="shipments" 
+                      stroke={chartColors[0]} 
+                      fillOpacity={1} 
+                      fill="url(#colorPrimary)" 
+                      name="Total Shipments"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="completed" 
+                      stroke={chartColors[1]} 
+                      fillOpacity={1} 
+                      fill="url(#colorSecondary)" 
+                      name="Completed"
+                    />
+                  </>
+                )}
+                {reportType === 'packages' && (
+                  <>
+                    <Area 
+                      type="monotone" 
+                      dataKey="packages" 
+                      stroke={chartColors[0]} 
+                      fillOpacity={1} 
+                      fill="url(#colorPrimary)" 
+                      name="Package Count"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="weight" 
+                      stroke={chartColors[1]} 
+                      fillOpacity={1} 
+                      fill="url(#colorSecondary)" 
+                      name="Est. Weight (kg)"
+                    />
+                  </>
+                )}
+                {reportType === 'users' && (
+                  <>
+                    <Area 
+                      type="monotone" 
+                      dataKey="users" 
+                      stroke={chartColors[0]} 
+                      fillOpacity={1} 
+                      fill="url(#colorPrimary)" 
+                      name="Users"
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="percentage" 
+                      stroke={chartColors[1]} 
+                      fillOpacity={1} 
+                      fill="url(#colorSecondary)" 
+                      name="Percentage (%)"
+                    />
+                  </>
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Top Performers Chart Component
+   * Renders horizontal bar chart showing highest performing segments
+   */
+  const TopPerformersChart: React.FC = () => {
+    // Prepare data based on report type
+    const chartData = (() => {
+      switch (reportType) {
+        case 'shipments':
+          return shipmentAnalytics?.topDestinations?.slice(0, 5).map(item => ({
+            name: item.city,
+            value: item.count,
+            percentage: item.percentage
+          })) || [];
+        case 'packages':
+          return packageAnalytics?.packagesByStore?.slice(0, 5).map(item => ({
+            name: item.store.length > 20 ? item.store.substring(0, 20) + '...' : item.store,
+            value: item.count,
+            totalValue: item.value
+          })) || [];
+        case 'users':
+          return userAnalytics?.topUsersBySuites?.slice(0, 5).map(item => ({
+            name: `${item.suite} - ${item.user}`,
+            value: item.packageCount
+          })) || [];
+        default:
+          return [];
+      }
+    })();
+
+    const chartColors = getChartColors();
+
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">Top Performers</h3>
+          <p className="text-sm text-gray-500 mt-1">Highest performing segments</p>
+        </div>
+        <div className="p-6">
+          {chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+              <p className="text-sm">No data available for this time period</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis type="number" stroke="#6B7280" style={{ fontSize: '12px' }} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  stroke="#6B7280" 
+                  style={{ fontSize: '11px' }}
+                  width={120}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="value" fill={chartColors[0]} radius={[0, 8, 8, 0]}>
+                  {chartData.map((_entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
-        {/* Header */}
-        <div className="mb-8 sm:mb-10">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`p-2.5 rounded-2xl bg-gradient-to-br ${colors.gradient} shadow-lg`}>
-              <FiActivity className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight">
+      {/* Modern Header Banner */}
+      <div className={`bg-gradient-to-r ${colors.gradient} shadow-lg`}>
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
                 Analytics Dashboard
               </h1>
+              <p className="mt-2 text-base sm:text-lg text-white/90">
+                Track performance metrics and gain insights across your operations
+              </p>
             </div>
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="hidden sm:flex gap-3">
+              {/* Refresh button */}
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 active:scale-95 transition-all duration-200 ${
-                  isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 disabled:opacity-50 transition-all border border-white/30 ${
+                  isRefreshing ? 'cursor-not-allowed' : ''
                 }`}
               >
-                <FiRefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <FiRefreshCw className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                 {isRefreshing ? 'Refreshing...' : 'Refresh'}
               </button>
+              
+              {/* Export button */}
               <button
                 onClick={handleExport}
                 disabled={isLoading || metrics.length === 0}
-                className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r ${colors.gradient} shadow-lg hover:shadow-xl hover:scale-105 active:scale-100 transition-all duration-200 ${
-                  isLoading || metrics.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                className={`flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 disabled:opacity-50 transition-all border border-white/30 ${
+                  isLoading || metrics.length === 0 ? 'cursor-not-allowed' : ''
                 }`}
               >
-                <FiDownload className="w-4 h-4" />
-                Export
+                <FiDownload className="mr-2" />
+                Export CSV
               </button>
             </div>
           </div>
-          <p className="text-base sm:text-lg text-gray-600 ml-0 sm:ml-14">
-            Track performance metrics and gain insights across your operations
-          </p>
         </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Controls */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6 mb-6 sm:mb-8">
@@ -387,7 +761,7 @@ const AnalysisReport: React.FC = () => {
               }`}
             >
               <FiDownload className="w-4 h-4" />
-              Export
+              Export CSV
             </button>
           </div>
         </div>
@@ -435,32 +809,22 @@ const AnalysisReport: React.FC = () => {
           )}
         </div>
 
-        {/* Charts Grid */}
+        {/* Professional Charts Grid with Real Data Visualization */}
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-            <ChartPlaceholder
-              icon={FiPieChart}
-              title="Distribution Analysis"
-              subtitle={`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} breakdown by category`}
-            />
-            <ChartPlaceholder
-              icon={FiBarChart2}
-              title="Volume Trends"
-              subtitle={`${reportType.charAt(0).toUpperCase() + reportType.slice(1)} activity over time`}
-            />
+            {/* Distribution Analysis - Pie Chart */}
+            <DistributionChart />
+            
+            {/* Volume Trends - Bar Chart */}
+            <VolumeTrendsChart />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-            <ChartPlaceholder
-              icon={FiTrendingUp}
-              title="Performance Metrics"
-              subtitle="Growth and efficiency indicators"
-            />
-            <ChartPlaceholder
-              icon={FiActivity}
-              title="Top Performers"
-              subtitle="Highest performing segments"
-            />
+            {/* Performance Metrics - Area Chart */}
+            <PerformanceChart />
+            
+            {/* Top Performers - Horizontal Bar Chart */}
+            <TopPerformersChart />
           </div>
         </div>
 

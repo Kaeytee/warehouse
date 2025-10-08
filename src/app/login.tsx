@@ -148,7 +148,7 @@ const Login = () => {
           <div className="w-full max-w-md">
             {/* Logo and Title */}
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-gray-700 mb-4">Vanguard Cargo.</h1>
+              <h1 className="text-4xl font-bold text-gray-700 mb-4">Vanguard Cargo</h1>
               <p className="text-gray-400 text-lg font-medium">Warehouse Management System</p>
               <div className="mt-2 text-xs text-gray-500">
                 <p>✅ admin@vanguardcargo.org (superadmin)</p>

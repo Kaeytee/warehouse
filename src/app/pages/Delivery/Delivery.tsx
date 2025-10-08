@@ -693,22 +693,22 @@ const Delivery: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Modern Header Banner */}
       <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight">
                 Package Delivery
               </h1>
-              <p className="mt-2 text-base sm:text-lg text-red-100">
+              <p className="mt-1 sm:mt-2 text-sm sm:text-base lg:text-lg text-red-100">
                 Verify pickup codes and hand over packages to customers
               </p>
             </div>
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all border border-white/30"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all border border-white/30 text-sm sm:text-base whitespace-nowrap self-end sm:self-auto"
             >
-              <FiRefreshCw />
-              Refresh
+              <FiRefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
@@ -717,78 +717,78 @@ const Delivery: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-xl shadow-red-100/50 border border-red-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-red-100/50 border border-red-100 p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Arrived Shipments</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent mt-2">
+              <div className="flex-1 min-w-0 pr-3">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">Arrived Shipments</p>
+                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent mt-1 sm:mt-2">
                   {arrivedShipments.length}
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl">
-                <FiSend className="h-10 w-10 text-red-600" />
+              <div className="p-3 sm:p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-xl sm:rounded-2xl flex-shrink-0">
+                <FiSend className="h-8 w-8 sm:h-10 sm:w-10 text-red-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl shadow-green-100/50 border border-green-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-green-100/50 border border-green-100 p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Packages Ready</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mt-2">
+              <div className="flex-1 min-w-0 pr-3">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">Packages Ready</p>
+                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mt-1 sm:mt-2">
                   {packagesAwaitingPickup.length}
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl">
-                <FiPackage className="h-10 w-10 text-green-600" />
+              <div className="p-3 sm:p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl sm:rounded-2xl flex-shrink-0">
+                <FiPackage className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl shadow-purple-100/50 border border-purple-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-purple-100/50 border border-purple-100 p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">With Delivery Codes</p>
-                <p className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mt-2">
+              <div className="flex-1 min-w-0 pr-3">
+                <p className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">With Delivery Codes</p>
+                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mt-1 sm:mt-2">
                   {packagesAwaitingPickup.filter(p => p.has_delivery_code).length}
                 </p>
               </div>
-              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl">
-                <FiShield className="h-10 w-10 text-purple-600" />
+              <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl sm:rounded-2xl flex-shrink-0">
+                <FiShield className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <FiSearch className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="text"
-                  placeholder="Search by package ID, tracking, suite number, or customer name..."
+                  placeholder="Search packages..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all bg-gray-50 hover:bg-white text-sm sm:text-base"
                 />
               </div>
             </div>
 
             {/* Shipment Filter */}
-            <div className="md:w-64">
+            <div className="w-full">
               <select
                 value={selectedShipment || ''}
                 onChange={(e) => setSelectedShipment(e.target.value || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all bg-gray-50 hover:bg-white font-medium text-sm sm:text-base"
               >
                 <option value="">All Shipments</option>
                 {arrivedShipments.map(shipment => (
                   <option key={shipment.id} value={shipment.id}>
-                    {shipment.tracking_number} ({shipment.packages_with_codes} packages)
+                    {shipment.tracking_number} ({shipment.packages_with_codes})
                   </option>
                 ))}
               </select>
@@ -797,72 +797,98 @@ const Delivery: React.FC = () => {
         </div>
 
         {/* Packages List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Packages Awaiting Pickup ({filteredPackages.length})
-            </h2>
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-red-50 to-white border-b-2 border-red-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-red-100 rounded-lg sm:rounded-xl flex-shrink-0">
+                <FiPackage className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">Packages Awaiting Pickup</h2>
+                <p className="text-xs sm:text-sm font-normal text-gray-600">{filteredPackages.length} packages ready</p>
+              </div>
+            </div>
           </div>
 
           <div className="divide-y divide-gray-200">
             {isLoadingPackages ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading packages...</p>
+              <div className="p-16 text-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-red-600 mx-auto"></div>
+                <p className="mt-6 text-gray-600 font-medium">Loading packages...</p>
               </div>
             ) : filteredPackages.length === 0 ? (
-              <div className="p-12 text-center">
-                <FiPackage className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No packages awaiting pickup</p>
+              <div className="p-16 text-center">
+                <div className="p-6 bg-gray-100 rounded-2xl inline-block mb-4">
+                  <FiPackage className="h-16 w-16 text-gray-400 mx-auto" />
+                </div>
+                <p className="text-gray-600 text-lg font-medium">No packages awaiting pickup</p>
+                <p className="text-gray-500 text-sm mt-2">Packages will appear here once they arrive</p>
               </div>
             ) : (
               filteredPackages.map(pkg => (
-                <div key={pkg.id} className="p-6 hover:bg-gray-50 transition">
-                  <div className="flex items-start justify-between">
+                <div key={pkg.id} className="p-4 sm:p-6 hover:bg-gradient-to-r hover:from-red-50 hover:to-transparent transition-all duration-200 border-l-4 border-transparent hover:border-red-500">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     {/* Package Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-all">
                           {pkg.package_id}
                         </h3>
                         {pkg.has_delivery_code ? (
-                          <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded flex items-center gap-1">
-                            <FiCheckCircle className="h-3 w-3" />
+                          <span className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg flex items-center gap-1 sm:gap-1.5 shadow-md whitespace-nowrap">
+                            <FiCheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                             CODE READY
                           </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded">
+                          <span className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold bg-gray-200 text-gray-700 rounded-lg shadow-sm whitespace-nowrap">
                             NO CODE
                           </span>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                        <p><strong>Tracking:</strong> {pkg.tracking_number}</p>
-                        <p><strong>Suite:</strong> {pkg.suite_number}</p>
-                        <p><strong>Customer:</strong> {pkg.customer_name}</p>
-                        <p><strong>Description:</strong> {pkg.description}</p>
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        <div className="flex flex-wrap items-start gap-1">
+                          <span className="text-gray-500 font-semibold">Tracking:</span>
+                          <span className="text-gray-900 font-mono break-all">{pkg.tracking_number}</span>
+                        </div>
+                        <div className="flex flex-wrap items-start gap-1">
+                          <span className="text-gray-500 font-semibold">Suite:</span>
+                          <span className="text-gray-900 font-semibold">{pkg.suite_number}</span>
+                        </div>
+                        <div className="flex flex-wrap items-start gap-1">
+                          <span className="text-gray-500 font-semibold">Customer:</span>
+                          <span className="text-gray-900 font-medium break-words">{pkg.customer_name}</span>
+                        </div>
+                        <div className="flex flex-wrap items-start gap-1">
+                          <span className="text-gray-500 font-semibold">Description:</span>
+                          <span className="text-gray-900 break-words">{pkg.description}</span>
+                        </div>
                         {pkg.shipment_tracking && (
-                          <p><strong>Shipment:</strong> {pkg.shipment_tracking}</p>
+                          <div className="flex flex-wrap items-start gap-1">
+                            <span className="text-gray-500 font-semibold">Shipment:</span>
+                            <span className="text-gray-900 font-mono break-all">{pkg.shipment_tracking}</span>
+                          </div>
                         )}
                         {pkg.auth_code_generated_at && (
-                          <p className="flex items-center gap-1">
-                            <FiClock className="h-4 w-4" />
-                            <strong>Code Generated:</strong> {new Date(pkg.auth_code_generated_at).toLocaleDateString()}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-1">
+                            <FiClock className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-500 font-semibold">Generated:</span>
+                            <span className="text-gray-900">{new Date(pkg.auth_code_generated_at).toLocaleDateString()}</span>
+                          </div>
                         )}
                       </div>
                     </div>
 
                     {/* Action Button */}
-                    <div>
+                    <div className="flex-shrink-0 w-full sm:w-auto">
                       <button
                         onClick={() => openVerificationModal(pkg)}
                         disabled={!pkg.has_delivery_code}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg sm:rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:scale-105 disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold text-sm sm:text-base whitespace-nowrap"
                       >
-                        <FiShield />
-                        Verify & Deliver
+                        <FiShield className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="hidden sm:inline">Verify & Deliver</span>
+                        <span className="sm:hidden">Verify</span>
                       </button>
                     </div>
                   </div>
@@ -875,36 +901,51 @@ const Delivery: React.FC = () => {
 
       {/* Verification Modal */}
       {showVerificationModal && verificationData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <FiShield className="text-red-600" />
-                Verify Delivery Code
-              </h3>
-              <button
-                onClick={() => setShowVerificationModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl sm:rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in slide-in-from-top duration-300 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-4 sm:px-6 py-4 sm:py-5 sticky top-0 z-10">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg sm:text-2xl font-bold text-white flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg sm:rounded-xl flex-shrink-0">
+                    <FiShield className="w-4 h-4 sm:w-6 sm:h-6" />
+                  </div>
+                  <span className="truncate">Verify Code</span>
+                </h3>
+                <button
+                  onClick={() => setShowVerificationModal(false)}
+                  className="text-white/80 hover:text-white transition-colors p-1.5 sm:p-2 hover:bg-white/20 rounded-lg flex-shrink-0"
+                >
+                  <span className="text-xl sm:text-2xl">✕</span>
+                </button>
+              </div>
             </div>
 
-            {/* Package Info */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-gray-600 mb-1">Package</p>
-              <p className="font-semibold text-gray-900">{verificationData.packageIdentifier}</p>
-              <p className="text-sm text-gray-600 mt-3">Customer</p>
-              <p className="font-semibold text-gray-900">{verificationData.customerName}</p>
-              <p className="text-sm text-gray-600 mt-3">Suite Number</p>
-              <p className="font-semibold text-gray-900">{verificationData.suiteNumber}</p>
-            </div>
+            <div className="p-4 sm:p-6">
 
-            {/* Input Fields */}
-            <div className="space-y-4 mb-6">
+              {/* Package Info */}
+              <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg sm:rounded-xl p-4 sm:p-5 mb-4 sm:mb-6 border-2 border-red-200">
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1">Package ID</p>
+                    <p className="font-mono font-bold text-gray-900 text-base sm:text-lg break-all">{verificationData.packageIdentifier}</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1">Customer</p>
+                      <p className="font-semibold text-gray-900 text-sm sm:text-base break-words">{verificationData.customerName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1">Suite Number</p>
+                      <p className="font-semibold text-gray-900 text-sm sm:text-base">{verificationData.suiteNumber}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              {/* Input Fields */}
+              <div className="mb-4 sm:mb-6">
+                <label className="block text-xs sm:text-sm font-bold text-gray-900 mb-2 sm:mb-3 uppercase tracking-wide">
                   6-Digit Delivery Code
                 </label>
                 <input
@@ -913,52 +954,55 @@ const Delivery: React.FC = () => {
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-center text-2xl font-mono tracking-widest"
+                  className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 sm:border-3 border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 sm:focus:ring-4 focus:ring-red-500/30 focus:border-red-500 text-center text-2xl sm:text-3xl font-mono font-bold tracking-[0.3em] sm:tracking-[0.5em] bg-gray-50 transition-all"
+                  autoFocus
+                  inputMode="numeric"
                 />
               </div>
-            </div>
 
-            {/* Messages */}
-            {verificationError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                <FiAlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{verificationError}</p>
+              {/* Messages */}
+              {verificationError && (
+                <div className="mb-4 p-4 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-3 animate-in slide-in-from-top duration-200">
+                  <FiAlertCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800 font-medium">{verificationError}</p>
+                </div>
+              )}
+
+              {verificationSuccess && (
+                <div className="mb-4 p-4 bg-green-50 border-2 border-green-300 rounded-xl flex items-start gap-3 animate-in slide-in-from-top duration-200">
+                  <FiCheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-green-800 font-medium">{verificationSuccess}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                <button
+                  onClick={() => setShowVerificationModal(false)}
+                  disabled={isVerifying}
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-300 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-all font-bold disabled:opacity-50 hover:scale-105 text-sm sm:text-base order-2 sm:order-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerifyPickupCode}
+                  disabled={isVerifying || !verificationCode || verificationCode.length !== 6}
+                  className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg sm:rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold hover:scale-105 text-sm sm:text-base order-1 sm:order-2"
+                >
+                  {isVerifying ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white"></div>
+                      <span>Verifying...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline">Verify & Mark Delivered</span>
+                      <span className="sm:hidden">Verify & Deliver</span>
+                    </>
+                  )}
+                </button>
               </div>
-            )}
-
-            {verificationSuccess && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-                <FiCheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-green-700">{verificationSuccess}</p>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowVerificationModal(false)}
-                disabled={isVerifying}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleVerifyPickupCode}
-                disabled={isVerifying || !verificationCode || verificationCode.length !== 6}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isVerifying ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Verifying...
-                  </>
-                ) : (
-                  <>
-                    <FiCheckCircle />
-                    Verify & Mark Delivered
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>
