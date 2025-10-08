@@ -94,8 +94,10 @@ export class WarehouseService {
       return packagesData.map((pkg: any) => {
         const user = usersMap[pkg.user_id];
         return {
+          id: pkg.id, // Database UUID for queries
           package_id: pkg.package_id,
           barcode: pkg.tracking_number,
+          tracking_number: pkg.tracking_number,
           client_name: user ? `${user.first_name} ${user.last_name}` : 'Unknown Client',
           client_id: pkg.user_id,
           suite_number: user?.suite_number || 'N/A',

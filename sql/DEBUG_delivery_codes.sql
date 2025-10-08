@@ -179,7 +179,12 @@ SELECT
     u.suite_number,
     u.first_name || ' ' || u.last_name as customer_name
 FROM packages p
-JOIN users u ON p.user_id = u.id
+JOIN users u ON p.user_id = u.SELECT 
+    tgname as trigger_name,
+    tgenabled as is_enabled,
+    tgrelid::regclass as table_name
+FROM pg_trigger
+WHERE tgname = 'trigger_generate_delivery_codes';
 WHERE p.status = 'arrived'
 AND p.delivery_auth_code IS NOT NULL
 ORDER BY p.auth_code_generated_at DESC;

@@ -9,8 +9,9 @@
  */
 
 import React, { useRef } from 'react';
-import { FiPrinter, FiX, FiPackage, FiCheckCircle, FiFileText } from 'react-icons/fi';
+import { FiPrinter, FiX } from 'react-icons/fi';
 import type { ReceiptData } from '../../services/warehouseDocumentService';
+import logo from '../../assets/image.png';
 
 // ============================================================================
 // COMPONENT PROPS INTERFACE
@@ -51,106 +52,265 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
             <head>
               <title>Receipt - ${receipt.receipt_number}</title>
               <style>
+                /* Responsive page setup for all paper sizes */
                 @page {
                   margin: 1cm;
                   size: auto;
                 }
+                
                 * {
                   box-sizing: border-box;
                 }
+                
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  width: 100%;
+                  height: 100%;
+                }
+                
                 body {
                   font-family: Arial, sans-serif;
-                  margin: 0;
-                  padding: 0.5cm;
+                  padding: 1cm;
                   max-width: 100%;
                   font-size: 10pt;
+                  position: relative;
+                  line-height: 1.5;
                 }
+                
+                /* Receipt container - responsive */
                 .receipt-container {
                   border: 2px solid #333;
                   padding: 1em;
                   max-width: 100%;
+                  width: 100%;
+                  position: relative;
+                  margin: 0 auto;
                 }
+                
+                /* Watermark - scales with viewport */
+                .watermark {
+                  position: fixed;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%) rotate(-45deg);
+                  font-size: 8vw;
+                  font-weight: bold;
+                  color: rgba(0, 0, 0, 0.05);
+                  z-index: -1;
+                  white-space: nowrap;
+                  pointer-events: none;
+                  letter-spacing: 0.1em;
+                }
+                
+                /* Header section - responsive */
                 .header {
                   text-align: center;
-                  border-bottom: 2px dashed #333;
-                  padding-bottom: 0.5em;
+                  border-bottom: 2px solid #dc2626;
+                  padding-bottom: 1em;
                   margin-bottom: 1em;
+                  width: 100%;
                 }
+                
+                /* Company logo - scales with container */
+                .company-logo {
+                  max-width: 20%;
+                  min-width: 100px;
+                  height: auto;
+                  margin: 0 auto 0.5em;
+                  display: block;
+                }
+                
+                .company-info {
+                  text-align: center;
+                  margin-bottom: 1em;
+                  line-height: 1.6;
+                  width: 100%;
+                }
+                
+                .company-name {
+                  font-size: 1.8em;
+                  font-weight: bold;
+                  color: #dc2626;
+                  margin: 0.5em 0 0.3em;
+                  word-wrap: break-word;
+                }
+                
+                .company-address {
+                  font-size: 0.85em;
+                  color: #666;
+                  margin: 0.2em 0;
+                  word-wrap: break-word;
+                  overflow-wrap: break-word;
+                }
+                
                 .header h1 {
                   margin: 0;
                   font-size: 1.5em;
+                  word-wrap: break-word;
                 }
+                
                 .receipt-number {
                   font-size: 1.1em;
                   font-weight: bold;
                   margin: 0.5em 0;
+                  padding: 0.5em;
+                  word-wrap: break-word;
                 }
+                
+                /* Section styling - responsive */
                 .section {
                   margin-bottom: 1em;
                   padding-bottom: 0.5em;
                   border-bottom: 1px solid #ddd;
+                  width: 100%;
                 }
+                
                 .section-title {
                   font-weight: bold;
                   font-size: 1em;
                   margin-bottom: 0.5em;
                   color: #333;
                 }
+                
+                /* Info rows - flexible layout */
                 .info-row {
                   display: flex;
                   justify-content: space-between;
                   margin-bottom: 0.3em;
                   padding: 0.2em 0;
                   word-wrap: break-word;
+                  flex-wrap: wrap;
+                  gap: 0.5em;
                 }
+                
                 .label {
                   font-weight: bold;
                   color: #666;
                   font-size: 0.85em;
                   flex-shrink: 0;
-                  margin-right: 0.5em;
+                  min-width: 30%;
                 }
+                
                 .value {
                   color: #333;
                   text-align: right;
                   font-size: 0.85em;
                   word-wrap: break-word;
                   overflow-wrap: break-word;
+                  flex: 1;
+                  min-width: 0;
                 }
+                
+                /* Barcode - responsive */
                 .barcode {
                   text-align: center;
-                  margin: 0.5em 0;
+                  margin: 1em 0;
+                  width: 100%;
                 }
+                
                 .barcode img {
                   max-width: 100%;
                   height: auto;
+                  display: block;
+                  margin: 0 auto;
                 }
+                
+                /* Footer - responsive */
                 .footer {
                   text-align: center;
                   margin-top: 1em;
-                  padding-top: 0.5em;
-                  border-top: 2px dashed #333;
+                  padding-top: 1em;
+                  border-top: 2px solid #dc2626;
                   font-size: 0.75em;
                   color: #666;
+                  width: 100%;
+                  word-wrap: break-word;
                 }
+                
+                .footer-logo {
+                  max-width: 15%;
+                  min-width: 60px;
+                  height: auto;
+                  margin: 0 auto 0.5em;
+                  display: block;
+                }
+                
+                /* Stamp/Auth code - responsive */
                 .stamp {
                   text-align: center;
-                  margin: 0.5em 0;
+                  margin: 1em auto;
                   padding: 0.5em;
                   background-color: #f9f9f9;
                   border: 2px solid #0066cc;
                   border-radius: 0.5em;
+                  max-width: 100%;
+                  word-wrap: break-word;
                 }
+                
+                /* Print-specific styles */
                 @media print {
-                  @page { margin: 1cm; }
-                  body { margin: 0 !important; padding: 0.5cm; }
-                  html, body { margin: 0 !important; padding: 0 !important; }
-                  .no-print { display: none; }
-                  img { max-width: 100%; height: auto; }
+                  @page {
+                    margin: 1cm;
+                    size: auto;
+                  }
+                  
+                  html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 100%;
+                    height: 100%;
+                  }
+                  
+                  body {
+                    padding: 0.5cm;
+                    font-size: 10pt;
+                  }
+                  
+                  .receipt-container {
+                    page-break-inside: avoid;
+                    max-width: 100%;
+                    width: 100%;
+                  }
+                  
+                  .no-print {
+                    display: none;
+                  }
+                  
+                  img {
+                    max-width: 100%;
+                    height: auto;
+                    page-break-inside: avoid;
+                  }
+                  
+                  .section {
+                    page-break-inside: avoid;
+                  }
+                  
+                  /* Ensure watermark appears on print */
+                  .watermark {
+                    font-size: 6vw;
+                  }
+                }
+                
+                /* Responsive adjustments for small paper sizes */
+                @media print and (max-width: 15cm) {
+                  body {
+                    font-size: 9pt;
+                  }
+                  
+                  .company-name {
+                    font-size: 1.5em;
+                  }
+                  
+                  .company-logo {
+                    max-width: 25%;
+                  }
                 }
               </style>
             </head>
             <body>
+              <div class="watermark">VANGUARDCARGO</div>
               ${printRef.current.innerHTML}
               <script>
                 window.onload = function() {
@@ -202,23 +362,6 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
     }
   };
 
-  /**
-   * Get receipt icon
-   * Returns appropriate icon for receipt type
-   */
-  const getReceiptIcon = () => {
-    switch (receipt.receipt_type) {
-      case 'package_intake':
-        return <FiPackage className="text-4xl" />;
-      case 'shipment_created':
-        return <FiFileText className="text-4xl" />;
-      case 'delivery_confirmation':
-        return <FiCheckCircle className="text-4xl" />;
-      default:
-        return <FiFileText className="text-4xl" />;
-    }
-  };
-
   // Extract receipt data
   const data = receipt.receipt_data;
 
@@ -233,8 +376,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              {getReceiptIcon()}
+            <h2 className="text-2xl font-bold">
               {getReceiptTypeLabel()}
             </h2>
             <p className="text-gray-100 text-sm mt-1">
@@ -265,25 +407,41 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div ref={printRef} className="receipt-container">
+          <div ref={printRef} className="receipt-container" style={{ position: 'relative' }}>
             {/* Header */}
-            <div className="header text-center mb-6">
+            <div className="header text-center mb-6" style={{ position: 'relative', zIndex: 1 }}>
+              {/* Company Logo */}
+              <img src={logo} alt="VanguardCargo Logo" className="company-logo" />
               
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                {data.warehouse_details?.name || 'VanguardCargo Warehouse'}
-              </h1>
-              <p className="text-gray-600">{data.warehouse_details?.contact || 'info@vanguardcargo.co'}</p>
-              <div className="receipt-number text-xl font-bold text-gray-800 mt-4 p-3 bg-gray-100 rounded-lg">
+              {/* Company Information */}
+              <div className="company-info">
+                <h1 className="company-name">
+                  VANGUARD CARGO LLC
+                </h1>
+                <p className="company-address">
+                  4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA
+                </p>
+                <p className="company-address">
+                  Email: support@vanguardcargo.co
+                </p>
+                <p className="company-address">
+                  Phone: 0303982320 | +233 544197819
+                </p>
+              </div>
+              
+              {/* Receipt Number */}
+              <div className="receipt-number" style={{ backgroundColor: '#f3f4f6', borderRadius: '0.5em' }}>
+                {getReceiptTypeLabel()}<br/>
                 Receipt: {receipt.receipt_number}
               </div>
-              <p className="text-gray-500 text-sm mt-2">
-                {formatDate(receipt.generated_at || data.timestamps?.generated_at)}
+              <p style={{ fontSize: '0.85em', color: '#666', marginTop: '0.5em' }}>
+                Generated: {formatDate(receipt.generated_at || data.timestamps?.generated_at)}
               </p>
             </div>
 
             {/* Customer Information */}
             {data.customer_details && (
-              <div className="section mb-6">
+              <div className="section mb-6" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="section-title text-lg font-bold text-gray-800 mb-3">
                   Customer Information
                 </div>
@@ -314,7 +472,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
 
             {/* Package Details */}
             {data.package_details && (
-              <div className="section mb-6">
+              <div className="section mb-6" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="section-title text-lg font-bold text-gray-800 mb-3">
                   Package Details
                 </div>
@@ -357,7 +515,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
 
             {/* Shipment Details */}
             {data.shipment_details && (
-              <div className="section mb-6">
+              <div className="section mb-6" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="section-title text-lg font-bold text-gray-800 mb-3">
                   Shipment Details
                 </div>
@@ -385,7 +543,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
 
             {/* Delivery Details */}
             {data.delivery_details && (
-              <div className="section mb-6">
+              <div className="section mb-6" style={{ position: 'relative', zIndex: 1 }}>
                 <div className="section-title text-lg font-bold text-gray-800 mb-3">
                   Delivery Information
                 </div>
@@ -435,16 +593,18 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
             )}
 
             {/* Footer */}
-            <div className="footer">
-              <p className="font-bold mb-2">Thank you for choosing VanguardCargo!</p>
-              <p className="text-xs">
+            <div className="footer" style={{ position: 'relative', zIndex: 1 }}>
+              <p className="font-bold mb-2" style={{ fontWeight: 'bold', marginBottom: '0.5em' }}>Thank you for choosing VanguardCargo!</p>
+              <p className="text-xs" style={{ fontSize: '0.75em' }}>
                 This is an official receipt. Please keep for your records.
               </p>
-              <p className="text-xs mt-2">
-                For inquiries, contact: {data.warehouse_details?.contact || 'info@vanguardcargo.co'}
+              <p className="text-xs mt-2" style={{ fontSize: '0.75em', marginTop: '0.5em' }}>
+                <strong>VANGUARD CARGO LLC</strong><br/>
+                4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA<br/>
+                Email: support@vanguardcargo.co | Phone: 0303982320 | +233 544197819
               </p>
-              <p className="text-xs mt-4">
-                © 2025 VanguardCargo Warehouse. All rights reserved.
+              <p className="text-xs mt-4" style={{ fontSize: '0.75em', marginTop: '1em' }}>
+                © 2025 VanguardCargo. All rights reserved.
               </p>
             </div>
           </div>

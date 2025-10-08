@@ -276,6 +276,342 @@ const Delivery: React.FC = () => {
   };
 
   /**
+   * Generate and auto-print delivery receipt for successfully verified package
+   */
+  const generateAndPrintDeliveryReceipt = async (packageData: VerificationData): Promise<void> => {
+    try {
+      console.log('📄 Generating delivery receipt for:', packageData.packageId);
+
+      // Fetch complete package details including arrival date
+      const { data: packageDetails, error: packageError } = await supabase
+        .from('packages')
+        .select(`
+          *,
+          users!packages_user_id_fkey(
+            suite_number,
+            first_name,
+            last_name,
+            email,
+            phone_number
+          )
+        `)
+        .eq('id', packageData.packageId)
+        .single();
+
+      if (packageError) throw packageError;
+
+      // Get current date/time for receipt generation
+      const now = new Date();
+      const receiptNumber = `DLV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Date.now().toString().slice(-6)}`;
+
+      // Create receipt HTML with VanguardCargo branding
+      const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Delivery Receipt - ${packageData.packageIdentifier}</title>
+            <style>
+              @page {
+                margin: 1cm;
+                size: auto;
+              }
+              * {
+                box-sizing: border-box;
+              }
+              body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0.5cm;
+                max-width: 100%;
+                font-size: 10pt;
+              }
+              .watermark {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-45deg);
+                font-size: 10vw;
+                font-weight: bold;
+                color: rgba(0, 0, 0, 0.05);
+                z-index: -1;
+                pointer-events: none;
+                user-select: none;
+              }
+              .receipt-container {
+                border: 3px solid #dc2626;
+                padding: 1.5em;
+                max-width: 100%;
+                background: white;
+                position: relative;
+              }
+              .header {
+                text-align: center;
+                border-bottom: 3px solid #dc2626;
+                padding-bottom: 1em;
+                margin-bottom: 1em;
+              }
+              .logo {
+                max-width: 150px;
+                height: auto;
+                margin-bottom: 0.5em;
+              }
+              .company-name {
+                font-size: 1.8em;
+                font-weight: bold;
+                color: #dc2626;
+                margin: 0.5em 0 0.2em 0;
+              }
+              .company-info {
+                font-size: 0.75em;
+                color: #666;
+                margin: 0.3em 0;
+              }
+              .receipt-title {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #059669;
+                margin: 1em 0 0.5em 0;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              }
+              .receipt-number {
+                font-size: 1em;
+                font-weight: bold;
+                background: #f3f4f6;
+                padding: 0.5em;
+                border-radius: 0.3em;
+                margin: 0.5em 0;
+              }
+              .section {
+                margin: 1.5em 0;
+                padding: 1em;
+                background: #f9fafb;
+                border-left: 4px solid #dc2626;
+                border-radius: 0.3em;
+              }
+              .section-title {
+                font-weight: bold;
+                font-size: 1.1em;
+                margin-bottom: 0.7em;
+                color: #dc2626;
+                text-transform: uppercase;
+              }
+              .info-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 0.5em;
+                padding: 0.3em 0;
+                border-bottom: 1px dotted #ddd;
+              }
+              .info-row:last-child {
+                border-bottom: none;
+              }
+              .label {
+                font-weight: bold;
+                color: #374151;
+                font-size: 0.9em;
+                flex-shrink: 0;
+                margin-right: 1em;
+              }
+              .value {
+                color: #1f2937;
+                text-align: right;
+                font-size: 0.9em;
+                font-weight: 600;
+              }
+              .delivery-stamp {
+                text-align: center;
+                margin: 1.5em 0;
+                padding: 1.5em;
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                border-radius: 1em;
+                border: 3px solid #047857;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              }
+              .stamp-title {
+                font-size: 0.9em;
+                font-weight: bold;
+                color: white;
+                margin-bottom: 0.5em;
+                text-transform: uppercase;
+              }
+              .stamp-content {
+                font-size: 2em;
+                font-weight: bold;
+                color: white;
+                margin: 0.3em 0;
+              }
+              .stamp-note {
+                font-size: 0.75em;
+                color: rgba(255,255,255,0.9);
+                margin-top: 0.5em;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 2em;
+                padding-top: 1em;
+                border-top: 3px solid #dc2626;
+                font-size: 0.75em;
+                color: #666;
+              }
+              @media print {
+                @page { margin: 1cm; }
+                body { margin: 0 !important; padding: 0.5cm; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="watermark">VANGUARDCARGO</div>
+            <div class="receipt-container">
+              <!-- Header -->
+              <div class="header">
+                <img src="${logo}" alt="VanguardCargo Logo" class="logo" />
+                <div class="company-name">VANGUARD CARGO LLC</div>
+                <div class="company-info">4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA</div>
+                <div class="company-info">Email: support@vanguardcargo.co | Phone: 0303982320 | +233 544197819</div>
+                
+                <div class="receipt-title">✅ Delivery Confirmation Receipt</div>
+                <div class="receipt-number">Receipt #: ${receiptNumber}</div>
+                <div class="company-info">Generated: ${now.toLocaleString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                })}</div>
+              </div>
+
+              <!-- Customer Information -->
+              <div class="section">
+                <div class="section-title">📋 Customer Information</div>
+                <div class="info-row">
+                  <span class="label">Name:</span>
+                  <span class="value">${packageData.customerName}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Suite Number:</span>
+                  <span class="value">${packageData.suiteNumber}</span>
+                </div>
+                ${packageDetails.users?.email ? `
+                <div class="info-row">
+                  <span class="label">Email:</span>
+                  <span class="value">${packageDetails.users.email}</span>
+                </div>
+                ` : ''}
+                ${packageDetails.users?.phone_number ? `
+                <div class="info-row">
+                  <span class="label">Phone:</span>
+                  <span class="value">${packageDetails.users.phone_number}</span>
+                </div>
+                ` : ''}
+              </div>
+
+              <!-- Package Details -->
+              <div class="section">
+                <div class="section-title">📦 Package Details</div>
+                <div class="info-row">
+                  <span class="label">Package ID:</span>
+                  <span class="value">${packageData.packageIdentifier}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Tracking Number:</span>
+                  <span class="value">${packageData.trackingNumber}</span>
+                </div>
+                ${packageDetails.description ? `
+                <div class="info-row">
+                  <span class="label">Description:</span>
+                  <span class="value">${packageDetails.description}</span>
+                </div>
+                ` : ''}
+                ${packageDetails.weight ? `
+                <div class="info-row">
+                  <span class="label">Weight:</span>
+                  <span class="value">${packageDetails.weight} kg</span>
+                </div>
+                ` : ''}
+              </div>
+
+              <!-- Delivery Information -->
+              <div class="section">
+                <div class="section-title">🚚 Delivery Information</div>
+                ${packageDetails.auth_code_generated_at ? `
+                <div class="info-row">
+                  <span class="label">Package Arrived:</span>
+                  <span class="value">${new Date(packageDetails.auth_code_generated_at).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}</span>
+                </div>
+                ` : ''}
+                <div class="info-row">
+                  <span class="label">Delivered On:</span>
+                  <span class="value">${now.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Delivery Status:</span>
+                  <span class="value" style="color: #059669; font-weight: bold;">✅ DELIVERED</span>
+                </div>
+              </div>
+
+              <!-- Delivery Confirmation Stamp -->
+              <div class="delivery-stamp">
+                <div class="stamp-title">Package Successfully Delivered</div>
+                <div class="stamp-content">✅ VERIFIED & RELEASED</div>
+                <div class="stamp-note">Delivery code verified by warehouse staff</div>
+                <div class="stamp-note" style="margin-top: 0.5em; font-size: 0.85em;">
+                  Delivered to: ${packageData.customerName} (Suite ${packageData.suiteNumber})
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="footer">
+                <p style="font-weight: bold; font-size: 1.1em; margin-bottom: 0.5em;">Thank you for choosing VanguardCargo!</p>
+                <p>This is an official delivery confirmation receipt. Please keep for your records.</p>
+                <p style="margin-top: 1em;">For inquiries, contact: support@vanguardcargo.co</p>
+                <p style="margin-top: 1em; font-weight: bold;">© 2025 VanguardCargo Warehouse. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      // Auto-print the receipt
+      const printWindow = window.open('', '', 'width=800,height=900');
+      if (printWindow) {
+        printWindow.document.write(receiptHTML);
+        printWindow.document.close();
+        
+        // Wait for content to load, then print
+        printWindow.onload = () => {
+          printWindow.focus();
+          setTimeout(() => {
+            printWindow.print();
+            setTimeout(() => printWindow.close(), 500);
+          }, 250);
+        };
+      }
+
+      console.log('✅ Delivery receipt generated and sent to printer');
+    } catch (error) {
+      console.error('❌ Error generating delivery receipt:', error);
+      // Don't throw - we don't want to block the verification success
+    }
+  };
+
+  /**
    * Handle verification submission
    */
   const handleVerifyPickupCode = async (): Promise<void> => {
@@ -354,65 +690,73 @@ const Delivery: React.FC = () => {
   // ========================================
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Modern Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <FiSend className="text-red-600" />
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
                 Package Delivery
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-base sm:text-lg text-red-100">
                 Verify pickup codes and hand over packages to customers
               </p>
             </div>
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 transition-all border border-white/30"
             >
               <FiRefreshCw />
               Refresh
             </button>
           </div>
         </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-2xl shadow-xl shadow-red-100/50 border border-red-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Arrived Shipments</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Arrived Shipments</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent mt-2">
                   {arrivedShipments.length}
                 </p>
               </div>
-              <FiSend className="h-12 w-12 text-red-500" />
+              <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl">
+                <FiSend className="h-10 w-10 text-red-600" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-2xl shadow-xl shadow-green-100/50 border border-green-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Packages Ready</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Packages Ready</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mt-2">
                   {packagesAwaitingPickup.length}
                 </p>
               </div>
-              <FiPackage className="h-12 w-12 text-green-500" />
+              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl">
+                <FiPackage className="h-10 w-10 text-green-600" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-2xl shadow-xl shadow-purple-100/50 border border-purple-100 p-6 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">With Delivery Codes</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">
+                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">With Delivery Codes</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mt-2">
                   {packagesAwaitingPickup.filter(p => p.has_delivery_code).length}
                 </p>
               </div>
-              <FiShield className="h-12 w-12 text-purple-500" />
+              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl">
+                <FiShield className="h-10 w-10 text-purple-600" />
+              </div>
             </div>
           </div>
         </div>

@@ -216,26 +216,48 @@ const PackageIntake: React.FC = () => {
   };
 
   return (
-    <div className="py-6 max-w-4xl mx-auto">
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Package Intake</h1>
-        <p className="text-gray-600">Scan and log packages into warehouse inventory</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Modern Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex items-center gap-4">
+            
+            <div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                Package Intake
+              </h1>
+              <p className="mt-2 text-base sm:text-lg text-red-100">
+               Scan and log packages into warehouse inventory
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
+      
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
       {/* Success Message */}
       {submitSuccess && createdPackage && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <FiCheck className="h-5 w-5 text-green-600 mr-3" />
-            <div>
-              <h3 className="text-sm font-semibold text-green-800">Package Successfully Logged</h3>
-              <p className="text-sm text-green-700 mt-1">
-                Package ID: <span className="font-mono font-semibold">{createdPackage.package_id}</span> | 
-                Tracking: <span className="font-mono font-semibold">{createdPackage.tracking_number}</span>
-              </p>
-              <p className="text-xs text-green-600 mt-2">
-                ℹ️ Pickup code will be auto-generated when shipment arrives
+        <div className="mb-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-2xl p-6 shadow-xl shadow-green-200/50 animate-in slide-in-from-top duration-500">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <FiCheck className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-green-900 mb-2"> Package Successfully Logged!</h3>
+              <div className="space-y-2">
+                <div className="p-3 bg-white/60 rounded-xl border border-green-200">
+                  <p className="text-xs text-gray-600 mb-1">Package ID</p>
+                  <p className="font-mono font-bold text-base text-gray-900">{createdPackage.package_id}</p>
+                </div>
+                <div className="p-3 bg-white/60 rounded-xl border border-green-200">
+                  <p className="text-xs text-gray-600 mb-1">Tracking Number</p>
+                  <p className="font-mono font-bold text-base text-gray-900">{createdPackage.tracking_number}</p>
+                </div>
+              </div>
+              <p className="text-sm text-green-700 mt-3 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                Pickup code will be auto-generated when shipment arrives
               </p>
             </div>
           </div>
@@ -244,12 +266,14 @@ const PackageIntake: React.FC = () => {
 
       {/* Error Message */}
       {submitError && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <FiAlertCircle className="h-5 w-5 text-red-600 mr-3" />
-            <div>
-              <h3 className="text-sm font-semibold text-red-800">Error</h3>
-              <p className="text-sm text-red-700 mt-1">{submitError}</p>
+        <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-2xl p-5 shadow-lg shadow-red-100/50 animate-in slide-in-from-top duration-300">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-red-100 rounded-xl">
+              <FiAlertCircle className="h-5 w-5 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-red-900 mb-1">❌ Error</h4>
+              <p className="text-red-700 text-sm">{submitError}</p>
             </div>
           </div>
         </div>
@@ -258,13 +282,21 @@ const PackageIntake: React.FC = () => {
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Suite Number Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <FiUser className="mr-2 text-red-600" />
-            Client Information
-          </h2>
+        <div className="bg-white shadow-xl shadow-gray-200/50 rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-6 py-5 bg-gradient-to-r from-blue-50 to-white border-b-2 border-blue-200">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-xl">
+                <FiUser className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <div className="text-gray-900">Client Information</div>
+                <div className="text-sm font-normal text-gray-600">Verify customer suite number</div>
+              </div>
+            </h2>
+          </div>
           
-          <div className="space-y-4">
+          <div className="p-6">
+            <div className="space-y-4">
             {/* Suite Number Input */}
             <div>
               <label htmlFor="suiteNumber" className="block text-sm font-medium text-gray-700 mb-2">
@@ -297,10 +329,12 @@ const PackageIntake: React.FC = () => {
               )}
               
               {userDetails && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center text-green-800 mb-2">
-                    <FiCheck className="mr-2 h-4 w-4" />
-                    <span className="font-semibold">User Found</span>
+                <div className="mt-4 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-md">
+                  <div className="flex items-center text-green-800 mb-3">
+                    <div className="p-2 bg-green-100 rounded-lg mr-2">
+                      <FiCheck className="h-5 w-5 text-green-600" />
+                    </div>
+                    <span className="font-bold text-lg"> User Verified</span>
                   </div>
                   <div className="text-sm text-green-700 space-y-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -348,16 +382,19 @@ const PackageIntake: React.FC = () => {
               )}
             </div>
           </div>
+          </div>
         </div>
 
         {/* Instruction message when user is not confirmed */}
         {!userDetails && formData.suiteNumber && !isSearchingUser && !userNotFound && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <FiSearch className="h-5 w-5 text-red-600 mr-3" />
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-5 shadow-lg">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-xl animate-pulse">
+                <FiSearch className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
-                <h3 className="text-sm font-semibold text-red-800">Searching for User</h3>
-                <p className="text-sm text-red-700 mt-1">Please wait while we verify the suite number...</p>
+                <h3 className="text-base font-bold text-blue-900">🔍 Searching for User</h3>
+                <p className="text-sm text-blue-700 mt-1">Please wait while we verify the suite number...</p>
               </div>
             </div>
           </div>
@@ -365,10 +402,12 @@ const PackageIntake: React.FC = () => {
 
         {/* Instruction message when no suite number entered */}
         {!userDetails && !formData.suiteNumber && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl p-8 shadow-md">
             <div className="text-center">
-              <FiPackage className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Log a Package</h3>
+              <div className="inline-flex p-4 bg-gray-200 rounded-2xl mb-4">
+                <FiPackage className="h-12 w-12 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📋 Ready to Log a Package</h3>
               <p className="text-gray-600">Enter a valid suite number above to begin logging package details.</p>
             </div>
           </div>
@@ -376,11 +415,20 @@ const PackageIntake: React.FC = () => {
 
         {/* Package Details Section - Only show when user is confirmed */}
         {userDetails && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <FiPackage className="mr-2 text-red-600" />
-              Package Details
-            </h2>
+          <div className="bg-white shadow-xl shadow-gray-200/50 rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="px-6 py-5 bg-gradient-to-r from-red-50 to-white border-b-2 border-red-200">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-xl">
+                  <FiPackage className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <div className="text-gray-900">Package Details</div>
+                  <div className="text-sm font-normal text-gray-600">Enter package information</div>
+                </div>
+              </h2>
+            </div>
+            
+            <div className="p-6">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Description */}
@@ -468,6 +516,7 @@ const PackageIntake: React.FC = () => {
               </div>
             </div>
           </div>
+            </div>
           </div>
         )}
 
@@ -477,23 +526,24 @@ const PackageIntake: React.FC = () => {
             <button
               type="submit"
               disabled={!userDetails || isSubmitting}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center px-8 py-4 border-0 text-base font-bold rounded-2xl shadow-lg text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-300 shadow-red-500/30 hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                   Processing...
                 </>
               ) : (
                 <>
-                  <FiSave className="mr-2 h-4 w-4" />
-                  Log Package
+                  <FiSave className="mr-3 h-5 w-5" />
+                  📦 Log Package
                 </>
               )}
             </button>
           </div>
         )}
       </form>
+      </div>
     </div>
   );
 };

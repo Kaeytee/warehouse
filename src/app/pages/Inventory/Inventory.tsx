@@ -16,17 +16,23 @@ import {
   FiFilter, 
   FiSearch, 
   FiEye,
-  FiEdit3,
   FiSend,
   FiBox,
   FiBarChart,
   FiRefreshCw,
-  FiDownload
+  FiDownload,
+  FiUser,
+  FiFileText,
+  FiAlertCircle,
+  FiPrinter
 } from 'react-icons/fi';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import { WarehouseService } from '../../../services/WarehouseService';
+import { ReceiptViewer } from '../../../components/warehouse/ReceiptViewer';
+import { supabase } from '../../../lib/supabase';
+import type { ReceiptData } from '../../../services/warehouseDocumentService';
 
 /**
  * Package Management System Interface
@@ -59,9 +65,11 @@ const PackageManagement: React.FC = () => {
   });
   
   // Modal and action states
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [selectedPackageForUpdate, setSelectedPackageForUpdate] = useState<any>(null);
-  const [newStatus, setNewStatus] = useState('');
+  const [showPackageDetailsModal, setShowPackageDetailsModal] = useState(false);
+  const [selectedPackageForView, setSelectedPackageForView] = useState<any>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<ReceiptData | null>(null);
+  const [loadingReceipt, setLoadingReceipt] = useState(false);
   
   // Package summary metrics
   const [summary, setSummary] = useState({
@@ -130,32 +138,82 @@ const PackageManagement: React.FC = () => {
   };
   
   /**
-   * Handle package status update
-   * @param {string} packageId - Package ID to update
-   * @param {string} newStatus - New status to set
+   * Close package details modal
    */
-  const handleStatusUpdate = async (packageId: string, newStatus: string) => {
+  const closeDetailsModal = () => {
+    setShowPackageDetailsModal(false);
+    setSelectedPackageForView(null);
+  };
+  
+  /**
+   * Fetch and display receipt for a package
+   * @param {any} pkg - Package object
+   */
+  const handlePrintReceipt = async (pkg: any) => {
     try {
-      // Check user authentication
-      if (!isAuthenticated || !userId) {
-        setError('User authentication required');
+      setLoadingReceipt(true);
+      setError(null);
+      
+      // Check if package has been processed through shipment
+      if (pkg.status === 'received' || pkg.status === 'pending') {
+        setError('Receipt not available. Package has not been processed through shipment yet.');
+        setTimeout(() => setError(null), 5000);
         return;
       }
-
-      await WarehouseService.updatePackageStatus(packageId, newStatus);
       
-      // Refresh package data
-      await loadPackages();
+      // Fetch receipt from database
+      const { data: receipt, error: receiptError } = await supabase
+        .from('receipts')
+        .select('*')
+        .eq('package_id', pkg.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
       
-      // Close modal
-      setShowStatusModal(false);
-      setSelectedPackageForUpdate(null);
-      setNewStatus('');
+      if (receiptError || !receipt) {
+        console.error('Error fetching receipt:', receiptError);
+        setError('Receipt not found for this package.');
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+      
+      // Convert receipt to ReceiptData format
+      const receiptData: ReceiptData = {
+        receipt_id: receipt.id,
+        receipt_number: receipt.receipt_number,
+        receipt_type: receipt.receipt_type,
+        package_id: receipt.package_id,
+        shipment_id: receipt.shipment_id,
+        user_id: receipt.user_id,
+        suite_number: receipt.suite_number,
+        warehouse_name: receipt.warehouse_name,
+        receipt_data: receipt.receipt_data,
+        barcode_data: receipt.barcode_data,
+        generated_by: receipt.generated_by,
+        generated_at: receipt.generated_at,
+        printed_at: receipt.printed_at,
+        created_at: receipt.created_at,
+        updated_at: receipt.updated_at
+      };
+      
+      setSelectedReceipt(receiptData);
+      setShowReceiptModal(true);
       
     } catch (err) {
-      console.error('Error updating package status:', err);
-      setError('Failed to update package status. Please try again.');
+      console.error('Error loading receipt:', err);
+      setError('Failed to load receipt. Please try again.');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setLoadingReceipt(false);
     }
+  };
+  
+  /**
+   * Close receipt modal
+   */
+  const closeReceiptModal = () => {
+    setShowReceiptModal(false);
+    setSelectedReceipt(null);
   };
   
   /**
@@ -300,95 +358,193 @@ const PackageManagement: React.FC = () => {
   };
 
   return (
-    <div className="py-10 px-6 w-full">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      {/* Modern Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                Inventory Management
+              </h1>
+              <p className="mt-2 text-base sm:text-lg text-red-100">
+                Comprehensive package tracking and inventory management
+              </p>
+            </div>
+            <div className="flex gap-3">
+              {/* Refresh button */}
+              <button
+                onClick={loadPackages}
+                disabled={loading}
+                className="flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 disabled:opacity-50 transition-all border border-white/30"
+              >
+                <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              
+              {/* Export button */}
+              <button
+                onClick={exportToCSV}
+                disabled={filteredPackages.length === 0}
+                className="flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg hover:bg-white/30 disabled:opacity-50 transition-all border border-white/30"
+              >
+                <FiDownload className="mr-2" />
+                Export CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
       {/* Error display */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
-      
-      {/* Page header with actions */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-black mb-1">Package Management</h1>
-          <p className="text-gray-400 text-sm">Comprehensive package tracking and inventory management</p>
-        </div>
-        <div className="flex gap-3">
-          {/* Refresh button */}
-          <button
-            onClick={loadPackages}
-            disabled={loading}
-            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-          >
-            <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-          
-          {/* Export button */}
-          <button
-            onClick={exportToCSV}
-            disabled={filteredPackages.length === 0}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            <FiDownload className="mr-2" />
-            Export CSV
-          </button>
-        </div>
-      </div>
           
 
       {/* Package summary metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 mb-8">
         {/* Total Packages Card */}
-        <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
-          <span className="absolute top-4 right-4 text-red-500 text-2xl">
-            <FiPackage />
-          </span>
-          <span className="text-gray-500 text-base mb-2">Total Packages</span>
-          <span className="text-2xl font-bold text-[#0D1637]">{summary.totalPackages}</span>
-          <span className="text-gray-300 text-xs mt-2">in warehouse</span>
-        </div>
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`group relative bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl shadow-lg shadow-gray-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-gray-500/40 transition-all duration-300 overflow-hidden text-left w-full ${
+            statusFilter === 'all' ? 'ring-4 ring-white ring-offset-2 scale-105' : 'hover:scale-102'
+          }`}>
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Total Packages</p>
+                </div>
+                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                  {summary.totalPackages}
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 font-medium">In warehouse</p>
+              </div>
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                <FiPackage className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </button>
         
         {/* Received Card */}
-        <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
-          <span className="absolute top-4 right-4 text-red-500 text-2xl">
-            <FiBox />
-          </span>
-          <span className="text-gray-500 text-base mb-2">Received</span>
-          <span className="text-2xl font-bold text-[#0D1637]">{summary.received}</span>
-          <span className="text-gray-300 text-xs mt-2">awaiting processing</span>
-        </div>
+        <button
+          onClick={() => setStatusFilter('received')}
+          className={`group relative bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg shadow-red-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-red-500/40 transition-all duration-300 overflow-hidden text-left w-full ${
+            statusFilter === 'received' ? 'ring-4 ring-white ring-offset-2 scale-105' : 'hover:scale-102'
+          }`}>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Received</p>
+                </div>
+                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                  {summary.received}
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 font-medium">Awaiting processing</p>
+              </div>
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                <FiBox className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </button>
         
         {/* Processing Card */}
-        <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
-          <span className="absolute top-4 right-4 text-purple-500 text-2xl">
-            <FiBarChart />
-          </span>
-          <span className="text-gray-500 text-base mb-2">Processing</span>
-          <span className="text-2xl font-bold text-[#0D1637]">{summary.processing}</span>
-          <span className="text-gray-300 text-xs mt-2">being prepared</span>
-        </div>
+        <button
+          onClick={() => setStatusFilter('processing')}
+          className={`group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 overflow-hidden text-left w-full ${
+            statusFilter === 'processing' ? 'ring-4 ring-white ring-offset-2 scale-105' : 'hover:scale-102'
+          }`}>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Processing</p>
+                </div>
+                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                  {summary.processing}
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 font-medium">Being prepared</p>
+              </div>
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                <FiBarChart className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </button>
         
         {/* Shipped Card */}
-        <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
-          <span className="absolute top-4 right-4 text-green-500 text-2xl">
-            <FiSend />
-          </span>
-          <span className="text-gray-500 text-base mb-2">Shipped</span>
-          <span className="text-2xl font-bold text-[#0D1637]">{summary.shipped}</span>
-          <span className="text-gray-300 text-xs mt-2">in transit</span>
-        </div>
+        <button
+          onClick={() => setStatusFilter('shipped')}
+          className={`group relative bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg shadow-green-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 overflow-hidden text-left w-full ${
+            statusFilter === 'shipped' ? 'ring-4 ring-white ring-offset-2 scale-105' : 'hover:scale-102'
+          }`}>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Shipped</p>
+                </div>
+                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                  {summary.shipped}
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 font-medium">In transit</p>
+              </div>
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                <FiSend className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </button>
         
-        {/* Total Weight Card */}
-        <div className="bg-white rounded-lg shadow p-6 flex flex-col relative min-h-[140px]">
-          <span className="absolute top-4 right-4 text-orange-500 text-2xl">
-            <FiCheckCircle />
-          </span>
-          <span className="text-gray-500 text-base mb-2">Total Weight</span>
-          <span className="text-2xl font-bold text-[#0D1637]">{summary.totalWeight}</span>
-          <span className="text-gray-300 text-xs mt-2">current inventory</span>
+        {/* Total Weight Card - Info Only (Not Clickable) */}
+        <div className="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 overflow-hidden cursor-default">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex-1">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Total Weight</p>
+                </div>
+                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                  {summary.totalWeight}
+                </p>
+                <p className="text-xs sm:text-sm text-white/80 font-medium">Current inventory</p>
+              </div>
+              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                <FiCheckCircle className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
       </div>
 
       {/* Bulk actions bar */}
@@ -456,7 +612,7 @@ const PackageManagement: React.FC = () => {
             selected={dateRange.start}
             onChange={(date) => setDateRange(prev => ({ ...prev, start: date }))}
             placeholderText="Start date"
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100 bg-white"
             dateFormat="MM/dd/yyyy"
           />
           <span className="text-gray-400">to</span>
@@ -464,7 +620,7 @@ const PackageManagement: React.FC = () => {
             selected={dateRange.end}
             onChange={(date) => setDateRange(prev => ({ ...prev, end: date }))}
             placeholderText="End date"
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100"
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-100 bg-white"
             dateFormat="MM/dd/yyyy"
           />
         </div>
@@ -565,22 +721,27 @@ const PackageManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <button 
+                        onClick={() => {
+                          setSelectedPackageForView(pkg);
+                          setShowPackageDetailsModal(true);
+                        }}
                         className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-red-600 transition-colors" 
                         title="View Details"
                       >
                         <FiEye size={16} />
                       </button>
-                      <button 
-                        onClick={() => {
-                          setSelectedPackageForUpdate(pkg);
-                          setNewStatus(pkg.status);
-                          setShowStatusModal(true);
-                        }}
-                        className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition-colors" 
-                        title="Update Status"
-                      >
-                        <FiEdit3 size={16} />
-                      </button>
+                      
+                      {/* Print Receipt - Only show if package has been processed */}
+                      {pkg.status !== 'received' && pkg.status !== 'pending' && (
+                        <button 
+                          onClick={() => handlePrintReceipt(pkg)}
+                          disabled={loadingReceipt}
+                          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-green-600 transition-colors disabled:opacity-50" 
+                          title="Print Receipt"
+                        >
+                          <FiPrinter size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -590,55 +751,133 @@ const PackageManagement: React.FC = () => {
         )}
       </div>
 
-      {/* Status Update Modal */}
-      {showStatusModal && selectedPackageForUpdate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Update Package Status
-            </h3>
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Package: <span className="font-medium">{selectedPackageForUpdate.package_id}</span>
-              </p>
-              <p className="text-sm text-gray-600 mb-4">
-                Client: <span className="font-medium">{selectedPackageForUpdate.client_name}</span>
-              </p>
-              
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Status
-              </label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              >
-                {statusOptions.filter(opt => opt.value !== 'all').map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+      {/* Package Details Modal */}
+      {showPackageDetailsModal && selectedPackageForView && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={closeDetailsModal}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-white">Package Details</h3>
+                  <p className="text-red-100 text-sm mt-1">Complete package information</p>
+                </div>
+                <button
+                  onClick={closeDetailsModal}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <FiAlertCircle className="w-5 h-5 text-white" />
+                </button>
+              </div>
             </div>
-            
-            <div className="flex justify-end gap-3">
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Package ID Section */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Package ID</h4>
+                <p className="text-2xl font-bold text-gray-900 font-mono">{selectedPackageForView.package_id}</p>
+              </div>
+
+              {/* Client Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <h4 className="text-xs font-semibold text-blue-700 uppercase mb-2 flex items-center gap-2">
+                    <FiUser className="w-4 h-4" />
+                    Client Name
+                  </h4>
+                  <p className="text-base font-semibold text-gray-900">{selectedPackageForView.client_name}</p>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <h4 className="text-xs font-semibold text-purple-700 uppercase mb-2 flex items-center gap-2">
+                    <FiPackage className="w-4 h-4" />
+                    Suite Number
+                  </h4>
+                  <p className="text-base font-semibold text-gray-900">{selectedPackageForView.suite_number}</p>
+                </div>
+              </div>
+
+              {/* Package Details */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-900 border-b pb-2">Package Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Barcode</p>
+                    <p className="text-sm font-mono font-semibold text-gray-900">{selectedPackageForView.barcode || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Package Type</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedPackageForView.package_type || 'Package'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Weight</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedPackageForView.weight || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Status</p>
+                    <span className={`inline-block px-3 py-1 rounded-full border text-xs font-semibold capitalize ${getStatusBadgeClass(selectedPackageForView.status)}`}>
+                      {selectedPackageForView.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tracking Information */}
+              {selectedPackageForView.tracking_number && (
+                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                  <h4 className="text-xs font-semibold text-green-700 uppercase mb-2">Tracking Number</h4>
+                  <p className="text-base font-mono font-bold text-gray-900">{selectedPackageForView.tracking_number}</p>
+                </div>
+              )}
+
+              {/* Timestamps */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-900 border-b pb-2">Timeline</h4>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Created At</span>
+                    <span className="text-sm font-semibold text-gray-900">{new Date(selectedPackageForView.created_at).toLocaleString()}</span>
+                  </div>
+                  {selectedPackageForView.updated_at && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm text-gray-600">Last Updated</span>
+                      <span className="text-sm font-semibold text-gray-900">{new Date(selectedPackageForView.updated_at).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Notes */}
+              {selectedPackageForView.notes && (
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <h4 className="text-xs font-semibold text-amber-700 uppercase mb-2 flex items-center gap-2">
+                    <FiFileText className="w-4 h-4" />
+                    Notes
+                  </h4>
+                  <p className="text-sm text-gray-700">{selectedPackageForView.notes}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end">
               <button
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setSelectedPackageForUpdate(null);
-                  setNewStatus('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                onClick={closeDetailsModal}
+                className="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleStatusUpdate(selectedPackageForUpdate.package_id, newStatus)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Update Status
+                Close
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {showReceiptModal && selectedReceipt && (
+        <ReceiptViewer 
+          receipt={selectedReceipt}
+          onClose={closeReceiptModal}
+        />
       )}
     </div>
   );

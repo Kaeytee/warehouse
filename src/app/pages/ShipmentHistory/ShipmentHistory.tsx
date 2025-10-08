@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPackage, FiSend, FiMapPin, FiCheck, FiLoader, FiAlertCircle, FiSearch, FiChevronRight, FiClock, FiUser, FiCalendar, FiFileText, FiDownload } from 'react-icons/fi';
+import { FiPackage, FiSend, FiMapPin, FiCheck, FiLoader, FiAlertCircle, FiSearch, FiChevronRight, FiClock, FiUser, FiBox, FiCalendar, FiFileText, FiDownload } from 'react-icons/fi';
 import { warehouseShipmentService, type ShipmentData, type ShipmentStatus } from '../../../services/warehouseShipmentService';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import WaybillViewer from '../../../components/warehouse/WaybillViewer';
@@ -221,7 +221,7 @@ const ShipmentHistory: React.FC = () => {
       processing: 'shipped', 
       shipped: 'in_transit',
       in_transit: 'arrived',
-      arrived: null, // Delivery must be done via Delivery page with code verification
+      arrived: 'delivered', 
       delivered: null
     };
     return flow[currentStatus];
@@ -461,9 +461,7 @@ const ShipmentHistory: React.FC = () => {
         {/* Header */}
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2.5 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg shadow-blue-500/30">
-              <FiSend className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-            </div>
+            
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 tracking-tight">
               Shipment History
             </h1>
@@ -497,23 +495,30 @@ const ShipmentHistory: React.FC = () => {
         )}
 
         {/* Status Overview Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {[
-            { key: 'in_transit', label: 'In Transit', icon: FiMapPin, bgColor: 'bg-gradient-to-br from-red-500 to-red-600' },
-            { key: 'delivered', label: 'Delivered', icon: FiCheck, bgColor: 'bg-gradient-to-br from-yellow-500 to-yellow-600' }
-          ].map(({ key, label, icon: Icon, bgColor }) => (
+            { key: 'all', label: 'All', icon: FiBox, gradient: 'from-gray-500 to-gray-600' },
+            { key: 'shipped', label: 'Shipped', icon: FiSend, gradient: 'from-purple-500 to-purple-600' },
+            { key: 'in_transit', label: 'In Transit', icon: FiMapPin, gradient: 'from-blue-500 to-blue-600' },
+            { key: 'arrived', label: 'Arrived', icon: FiPackage, gradient: 'from-amber-500 to-amber-600' },
+            { key: 'delivered', label: 'Delivered', icon: FiCheck, gradient: 'from-emerald-500 to-emerald-600' }
+          ].map(({ key, label, icon: Icon, gradient }) => (
             <button
               key={key}
               onClick={() => setStatusFilter(key as any)}
-              className={`relative overflow-hidden rounded-2xl p-6 sm:p-8 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 ${bgColor}`}
+              className={`relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 ${
+                statusFilter === key
+                  ? 'bg-white shadow-lg shadow-gray-200/50 scale-105 ring-2 ring-gray-900/5'
+                  : 'bg-white/60 hover:bg-white shadow hover:shadow-md hover:scale-102'
+              }`}
             >
-              <div className="flex flex-col items-start gap-3">
-                <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm shadow-md">
-                  <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <div className="flex flex-col items-start gap-2">
+                <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} shadow-md`}>
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-left w-full">
-                  <p className="text-sm sm:text-base font-semibold text-white/90">{label}</p>
-                  <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mt-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">{label}</p>
+                  <p className="text-xl sm:text-2xl font-semibold text-gray-900 mt-0.5">
                     {statusCounts[key as keyof typeof statusCounts]}
                   </p>
                 </div>
