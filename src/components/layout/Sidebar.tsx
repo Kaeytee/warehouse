@@ -17,7 +17,9 @@ import {
   FiUsers,
   FiHome,
   FiBox,
-  FiBarChart
+  FiBarChart,
+  FiTruck,
+  FiDownload
 } from 'react-icons/fi';
 
 /**
@@ -84,9 +86,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onToggle }) => {
   const getIcon = useMemo(() => {
     const iconMap = {
       'FiHome': <FiHome size={20} />,
+      'FiDownload': <FiDownload size={20} />,
       'FiPackage': <FiPackage size={20} />,
       'FiBox': <FiBox size={20} />,
       'FiSend': <FiSend size={20} />,
+      'FiTruck': <FiTruck size={20} />,
       'FiBarChart': <FiBarChart size={20} />,
       'FiUsers': <FiUsers size={20} />,
       'FiFileText': <FiFileText size={20} />,

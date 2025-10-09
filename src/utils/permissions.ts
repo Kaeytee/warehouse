@@ -198,7 +198,7 @@ export function getAllowedNavItems(userRole: string) {
   }
   
   if (permissions.canProcessIntake) {
-    navItems.push({ path: '/intake', name: 'Package Intake', icon: 'FiPackage' });
+    navItems.push({ path: '/intake', name: 'Package Intake', icon: 'FiDownload' });
   }
   
   if (permissions.canViewInventory) {
@@ -211,7 +211,7 @@ export function getAllowedNavItems(userRole: string) {
   
   // Delivery page - available to all warehouse roles
   if (permissions.canManagePackages) {
-    navItems.push({ path: '/delivery', name: 'Delivery', icon: 'FiSend' });
+    navItems.push({ path: '/delivery', name: 'Delivery', icon: 'FiTruck' });
   }
   
   // Advanced operations - admin and superadmin only
