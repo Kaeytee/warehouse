@@ -116,7 +116,7 @@ export const EnhancedPackageDetailModal: React.FC<EnhancedPackageDetailModalProp
    * Handle successful verification
    * Updates parent component and closes modals
    */
-  const handleVerificationSuccess = (result: any): void => {
+  const handleVerificationSuccess = (_result: any): void => {
     if (onUpdate) {
       onUpdate();
     }

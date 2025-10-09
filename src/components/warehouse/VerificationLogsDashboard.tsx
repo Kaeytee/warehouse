@@ -11,7 +11,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiShield, FiCheckCircle, FiXCircle, FiSearch, FiFilter, FiDownload } from 'react-icons/fi';
 import { supabase } from '../../lib/supabase';
-import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -46,8 +45,6 @@ export const VerificationLogsDashboard: React.FC = () => {
   // ========================================
   // STATE MANAGEMENT
   // ========================================
-
-  const { userId } = useWarehouseAuth();
 
   // Data state
   const [logs, setLogs] = useState<VerificationLog[]>([]);
@@ -363,7 +360,7 @@ export const VerificationLogsDashboard: React.FC = () => {
               Status
             </label>
             <select
-              value={filters.success === null ? '' : filters.success.toString()}
+              value={filters.success === null ? '' : (filters.success ?? '').toString()}
               onChange={(e) => handleFilterChange('success', e.target.value === '' ? null : e.target.value === 'true')}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
             >

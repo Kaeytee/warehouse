@@ -311,7 +311,7 @@ class PackageIntakeHelper {
       }
 
       // Check suite number
-      if (packageData.users.suite_number !== suiteNumber.trim().toUpperCase()) {
+      if (packageData.users[0]?.suite_number !== suiteNumber.trim().toUpperCase()) {
         return { valid: false, reason: 'Suite number mismatch' };
       }
 

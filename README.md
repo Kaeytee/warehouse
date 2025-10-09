@@ -264,41 +264,77 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
 - **File Updated**:
   - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Fixed interface and field mappings
 
-#### 🔐 6-Digit Verification for Delivery Status (Restored 2025-10-08)
-- **Mandatory Verification** before marking packages as delivered in Shipment History:
-  - Clicking "Mark as Delivered" now triggers a verification modal
-  - Requires 6-digit pickup code input before status change
-  - Cannot bypass verification - security enforced
-- **Professional Verification Modal**:
-  - Clean, modern design with red accent theme
-  - Large centered input for 6-digit code
-  - Monospace font with tracking for easy reading
-  - Auto-focuses on input for quick entry
-  - Visual progress indicator (6 dots showing digits entered)
-  - Enter key support for quick submission
-- **Smart Input Validation**:
-  - Only accepts numeric digits (0-9)
-  - Auto-limits to 6 digits
-  - Clears on error for retry
-  - Real-time digit count display
-  - Prevents submission until all 6 digits entered
-- **Error Handling**:
-  - Clear error messages displayed in modal
-  - Format validation (must be exactly 6 digits)
-  - Integration ready for `verify_pickup_code()` database function
-- **User Experience**:
-  - Smooth animations (fade-in, zoom-in)
-  - Backdrop blur effect
-  - Cancel button to abort
-  - Loading state during verification
-  - Success feedback after verification
-  - Modal closes automatically on success
-- **Security Features**:
-  - Status only updates after successful code verification
-  - Prevents accidental delivery confirmation
+#### 📧 Email Notification System (Implemented 2025-10-08)
+- **Automated Email Notifications** for all in-app notifications:
+  - Emails sent from: `noreply@vanguardcargo.co`
+  - Uses Resend API for reliable delivery
+  - Professional HTML templates with VanguardCargo branding
+  - Respects user preferences (can be disabled per user)
+- **Notification Types with Custom Styling**:
+  - 📦 Package Updates (Blue theme)
+  - 🚚 Shipment Updates (Purple theme)
+  - 🔔 System Notifications (Gray theme)
+  - 🎁 Promotions (Green theme)
+- **Automatic Queueing System**:
+  - Database trigger queues emails when notifications created
+  - Background processor runs every 30 seconds
+  - Automatic retry (up to 3 attempts) for failed emails
+  - Full audit trail in `email_notification_log` table
+- **Fixed Shipment Status Notifications**:
+  - Updated `warehouseShipmentService.updateShipmentStatus()` to call RPC function
+  - Now creates notifications for ALL status changes (not just manual updates)
+  - Notifications sent for: pending → processing → shipped → in_transit → arrived
+  - Each status change triggers both in-app notification AND email
+- **Files Modified**:
+  - `src/services/emailNotificationService.ts` - Email sending service
+  - `src/hooks/useEmailNotificationProcessor.ts` - Background queue processor
+  - `src/services/warehouseShipmentService.ts` - Fixed to use RPC function
+  - `src/App.tsx` - Integrated email processor
+  - `sql/70_email_notification_system.sql` - Database schema and triggers
+- **Setup Required**:
+  - Add `VITE_RESEND_API_KEY` to `.env.local`
+  - Run SQL file: `sql/70_email_notification_system.sql`
+  - Verify domain with Resend: `vanguardcargo.co`
+
+#### 🔐 Delivery Verification Workflow (Enhanced 2025-10-08)
+- **Removed Direct "Mark as Delivered" Option** from Shipment History:
+  - Shipments with "arrived" status no longer show "Mark as Delivered" button
+  - Removed verification modal from Shipment History page
+  - Forces use of dedicated Delivery page with proper workflow
+  - Prevents accidental or unauthorized delivery confirmation
+- **Mandatory Verification Workflow**:
+  - All arrived packages MUST be marked delivered through the Delivery page only
+  - Delivery page has dedicated 6-digit pickup code verification system
+  - Cannot bypass verification - security enforced at application level
   - Aligns with pickup code system in database (SQL files 60, 61)
-- **File Updated**:
-  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Restored 6-digit verification logic for delivered status
+- **Delivery Notifications (Added 2025-10-08)**:
+  - ✅ Customers automatically receive in-app notification when package is delivered
+  - Notification includes package ID and links to tracking page
+  - Notification type: 'package_update' with title '📦 Package Delivered'
+  - Complete delivery confirmation workflow with customer communication
+- **Automatic Email on Status Change (Added 2025-10-09)**:
+  - ✅ Database triggers automatically send emails on **ANY** package/shipment status change
+  - Calls Supabase Edge Function `send-notification-email` via `pg_net` extension
+  - **Completely database-driven** - zero frontend code required
+  - Package emails: received → processing → shipped → in_transit → arrived → delivered
+  - Shipment emails: pending → processing → shipped → in_transit → arrived
+  - Status-specific icons, titles, and messages for each transition
+  - Integrates with existing Resend email infrastructure
+  - See `AUTO_EMAIL_SETUP.md` for 3-minute setup guide
+  - Files: `sql/86_auto_email_on_delivery.sql`
+- **Clean Separation of Concerns**:
+  - **Shipment History**: Track and manage shipments up to "arrived" status
+  - **Delivery Page**: Handle final delivery confirmation with 6-digit codes
+  - Clear workflow: Create → Track → Arrive → Verify → Deliver → Notify ✅
+- **Benefits**:
+  - Single source of truth for delivery verification
+  - Consistent user experience for all deliveries
+  - Proper audit trail through dedicated delivery system
+  - Prevents status manipulation
+  - Customers informed immediately upon successful delivery
+- **Files Updated**:
+  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Removed verification modal, set arrived → null status flow
+  - `sql/85_add_delivery_notification.sql` - Added notification creation to verify_delivery_code() function
 
 ## Authentication & Test Credentials
 
@@ -309,17 +345,54 @@ The warehouse system uses role-based access control (RBAC) with three user roles
 - **Employee ID**: 10-digit number
 - **Password**: 6-character string
 
-### Test Credentials
+### Database Deployment
 
-#### Worker Role
+### SQL Scripts Execution Order
 
-- **Employee ID**: `1234567890` | **Password**: `work01`
+**Important**: Run these SQL scripts in the exact order listed to avoid dependency issues:
+
+1. **Core Tables**: `sql/01_create_tables.sql` - Create base tables
+2. **Auth Functions**: `sql/02_auth_functions.sql` - Authentication setup
+3. **[Other existing SQL files...]** - Run your existing numbered SQL files in order
+4. **Security Fixes** (Run these LAST after all tables are created):
+   - `sql/71_enable_rls_security.sql` - Enable RLS on tables
+   - `sql/72_fix_function_security.sql` - Fix function search_path
+   - `sql/73_fix_users_table_policies.sql` - Fix users table recursion (SKIP if running #75)
+   - `sql/74_fix_email_policies_recursion.sql` - Fix email policies (SKIP if running #75)
+   - **`sql/75_fix_all_rls_policies.sql`** - ⭐ **RUN THIS** - Comprehensive RLS fix (includes 73 & 74)
+
+### Quick Setup
+
+```bash
+# Run in Supabase SQL Editor in this order:
+1. All existing numbered SQL files (01-69)
+2. sql/71_enable_rls_security.sql
+3. sql/72_fix_function_security.sql
+4. sql/75_fix_all_rls_policies.sql  # This fixes all policy issues
+```
+
+### ⚠️ Troubleshooting
+
+**Infinite Recursion Error**: 
+- Run `sql/75_fix_all_rls_policies.sql` - This fixes users table policies
+- Restart your dev server
+
+**Network Error on Dashboard**:
+- Check RLS policies are not blocking queries
+- Run `sql/75_fix_all_rls_policies.sql`
+
+**Email Tables Don't Exist**:
+- Email notification system requires manual setup
+- Tables will be created when email feature is implemented
+
+## Test Credentials
+
+### Administrator Access
+- **Employee ID**: `7890123456` | **Password**: `mgr001`
 - **Employee ID**: `2345678901` | **Password**: `work02`
 - **Employee ID**: `3456789012` | **Password**: `work03`
 
 **Permissions**: Dashboard, Incoming Requests, Shipment History, Inventory
-
-#### Inventory Analyst Role
 
 - **Employee ID**: `4567890123` | **Password**: `inv001`
 - **Employee ID**: `5678901234` | **Password**: `inv002`

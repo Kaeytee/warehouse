@@ -187,5 +187,49 @@ export const useWarehouseAuth = () => {
     }
   }, [authState.isAuthenticated, authState.isLoading, navigate]);
 
-  return authState;
+  // Return auth state with methods
+  return {
+    ...authState,
+    user: authState.isAuthenticated ? { 
+      id: authState.userId, 
+      email: authState.email, 
+      role: authState.role as any,
+      firstName: authState.displayName.split(' ')[0] || '',
+      lastName: authState.displayName.split(' ')[1] || '',
+      fullName: authState.displayName,
+      status: 'active' as const,
+      suiteNumber: undefined,
+      phoneNumber: undefined,
+      address: undefined,
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    } : null,
+    signIn: async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) return { success: false, error: error.message };
+        if (data.user) {
+          await validateAndSetGlobalAuth(data.user, navigate);
+        }
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : 'Login failed' };
+      }
+    },
+    signOut: async () => {
+      await supabase.auth.signOut();
+      updateGlobalAuthState({ 
+        isAuthenticated: false, 
+        role: '', 
+        email: '', 
+        displayName: '', 
+        userId: '', 
+        isLoading: false 
+      });
+      navigate('/login', { replace: true });
+    },
+    hasRole: (role: string) => authState.role === role,
+    error: null
+  };
 };

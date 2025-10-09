@@ -426,9 +426,8 @@ const CreateShipment: React.FC = () => {
                   VANGUARD CARGO LLC
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <p className="text-base sm:text-lg text-green-800 font-bold">
-                    ✅ Shipment Created Successfully!
+                    Shipment Created Successfully!
                   </p>
                 </div>
                 <div className="mt-3 p-3 bg-white/60 rounded-xl border border-green-200">

@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useWarehouseAuth } from './hooks/useWarehouseAuth';
+// import { useEmailNotificationProcessor } from './hooks/useEmailNotificationProcessor'; // Disabled until email tables created
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './app/login';
 import Dashboard from './app/pages/dashboard';
@@ -211,10 +212,15 @@ const AppRoutes: React.FC = () => {
  * Wraps the entire application with necessary providers and routing
  */
 const App = (): React.ReactElement => {
+  // TEMPORARILY DISABLED: Email notification processor (email tables don't exist yet)
+  // TODO: Uncomment after running sql/70_email_notification_system.sql
+  // useEmailNotificationProcessor();
+
   // Effect to check authentication status on app load
   useEffect(() => {
     // Initialize any global settings or analytics here
     console.log('Vanguard Cargo Warehouse App - Role-Based Access Control Enabled');
+    console.log('⚠️ Email Notification System: DISABLED (tables not created)');
   }, []);
   
   return (

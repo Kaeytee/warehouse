@@ -416,18 +416,35 @@ class WarehouseShipmentService {
 
   /**
    * Update shipment status
+   * Calls database function that creates notifications and updates packages
    */
   async updateShipmentStatus(
     shipmentId: string,
     newStatus: ShipmentStatus,
     updatedByUserId?: string,
-    notes?: string
+    _notes?: string
   ): Promise<ShipmentData> {
     try {
-      // Get current status for logging
-      const { data: currentShipment, error: fetchError } = await supabase
+      // Call the database function that creates notifications and updates packages
+      const { data: rpcResult, error: rpcError } = await supabase.rpc('update_shipment_status', {
+        p_shipment_id: shipmentId,
+        p_new_status: newStatus,
+        p_warehouse_staff_id: updatedByUserId
+      });
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      // Check if the RPC call was successful
+      if (!rpcResult?.success) {
+        throw new Error(rpcResult?.error || 'Failed to update shipment status');
+      }
+
+      // Fetch the updated shipment data
+      const { data: updatedShipment, error: fetchError } = await supabase
         .from('shipments')
-        .select('status')
+        .select('*')
         .eq('id', shipmentId)
         .single();
 
@@ -435,33 +452,14 @@ class WarehouseShipmentService {
         throw fetchError;
       }
 
-      const oldStatus = currentShipment?.status as ShipmentStatus;
-
-      // Update shipment
-      const { data, error } = await supabase
-        .from('shipments')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', shipmentId)
-        .select()
-        .single();
-      if (error) {
-        throw error;
-      }
-
-      // Update package statuses based on shipment status
-      await this.updatePackageStatusesForShipment(shipmentId, newStatus);
-
       logger.info('Shipment status updated:', { 
         shipmentId,
-        oldStatus: currentShipment.status,
         newStatus,
-        updatedBy: updatedByUserId 
+        updatedBy: updatedByUserId,
+        notificationsCreated: true
       });
 
-      return data;
+      return updatedShipment;
 
     } catch (error) {
       handleSupabaseError(error, 'Update shipment status');
@@ -476,8 +474,8 @@ class WarehouseShipmentService {
     shipmentId: string,
     totalCost: number,
     costBreakdown?: Record<string, number>,
-    updatedByUserId?: string,
-    notes?: string
+    _updatedByUserId?: string,
+    _notes?: string
   ): Promise<ShipmentData> {
     try {
       const { data, error } = await supabase
@@ -572,55 +570,6 @@ class WarehouseShipmentService {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
     return `${prefix}${timestamp}${random}`;
-  }
-
-  /**
-   * Update package statuses based on shipment status
-   */
-  private async updatePackageStatusesForShipment(
-    shipmentId: string,
-    shipmentStatus: ShipmentStatus
-  ): Promise<void> {
-    try {
-      let packageStatus: string | null = null;
-
-      switch (shipmentStatus) {
-        case 'processing':
-        case 'shipped':
-        case 'in_transit':
-          packageStatus = 'shipped';
-          break;
-        case 'arrived':
-          packageStatus = 'arrived';
-          break;
-        case 'delivered':
-          packageStatus = 'delivered';
-          break;
-      }
-
-      if (packageStatus) {
-        // Get package IDs for this shipment
-        const { data: packageShipments } = await supabase
-          .from('package_shipments')
-          .select('package_id')
-          .eq('shipment_id', shipmentId);
-
-        if (packageShipments?.length) {
-          const packageIds = packageShipments.map(ps => ps.package_id);
-          
-          await supabase
-            .from('packages')
-            .update({ 
-              status: packageStatus,
-              updated_at: new Date().toISOString(),
-            })
-            .in('id', packageIds);
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to update package statuses:', error);
-      // Don't throw - this is a background operation
-    }
   }
 
 }

@@ -182,18 +182,8 @@ const PackageManagement: React.FC = () => {
         receipt_id: receipt.id,
         receipt_number: receipt.receipt_number,
         receipt_type: receipt.receipt_type,
-        package_id: receipt.package_id,
-        shipment_id: receipt.shipment_id,
-        user_id: receipt.user_id,
-        suite_number: receipt.suite_number,
-        warehouse_name: receipt.warehouse_name,
         receipt_data: receipt.receipt_data,
-        barcode_data: receipt.barcode_data,
-        generated_by: receipt.generated_by,
-        generated_at: receipt.generated_at,
-        printed_at: receipt.printed_at,
-        created_at: receipt.created_at,
-        updated_at: receipt.updated_at
+        generated_at: receipt.generated_at
       };
       
       setSelectedReceipt(receiptData);

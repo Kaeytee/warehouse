@@ -51,13 +51,6 @@ const ShipmentHistory: React.FC = () => {
   const [showWaybill, setShowWaybill] = useState<string | null>(null);
   const [isGeneratingReceipts, setIsGeneratingReceipts] = useState<string>('');
 
-  // Verification modal state for delivered status
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
-  const [verificationShipmentId, setVerificationShipmentId] = useState<string | null>(null);
-  const [verificationCode, setVerificationCode] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState('');
-
   /**
    * Fetch shipments from Supabase backend
    */
@@ -127,16 +120,7 @@ const ShipmentHistory: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [currentPage, statusFilter, searchTerm]);
 
-  const updateShipmentStatus = async (shipmentId: string, newStatus: Shipment['status'], skipVerification = false) => {
-    // If trying to mark as delivered, require 6-digit verification
-    if (newStatus === 'delivered' && !skipVerification) {
-      setVerificationShipmentId(shipmentId);
-      setShowVerificationModal(true);
-      setVerificationCode('');
-      setVerificationError('');
-      return;
-    }
-
+  const updateShipmentStatus = async (shipmentId: string, newStatus: Shipment['status']) => {
     setIsUpdating(shipmentId);
     setError('');
 
@@ -168,45 +152,6 @@ const ShipmentHistory: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to update shipment status');
     } finally {
       setIsUpdating('');
-    }
-  };
-
-  /**
-   * Handle 6-digit code verification for delivery confirmation
-   */
-  const handleVerifyDeliveryCode = async () => {
-    if (!verificationShipmentId || !userId) return;
-
-    // Validate code format
-    if (!/^\d{6}$/.test(verificationCode)) {
-      setVerificationError('Please enter a valid 6-digit code');
-      return;
-    }
-
-    setIsVerifying(true);
-    setVerificationError('');
-
-    try {
-      // Here you would call the verification endpoint
-      // For now, we'll verify the code matches the expected format
-      // In production, this should call: verify_pickup_code() from the database
-      
-      // Simulate verification call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // If verification succeeds, update status to delivered
-      await updateShipmentStatus(verificationShipmentId, 'delivered', true);
-      
-      // Close modal on success
-      setShowVerificationModal(false);
-      setVerificationShipmentId(null);
-      setVerificationCode('');
-      
-    } catch (err: any) {
-      console.error('Verification error:', err);
-      setVerificationError(err.message || 'Invalid pickup code. Please try again.');
-    } finally {
-      setIsVerifying(false);
     }
   };
 
@@ -276,7 +221,7 @@ const ShipmentHistory: React.FC = () => {
       processing: 'shipped', 
       shipped: 'in_transit',
       in_transit: 'arrived',
-      arrived: 'delivered', 
+      arrived: null,  // Don't show "Mark as Delivered" button - must use Delivery page with 6-digit verification
       delivered: null
     };
     return flow[currentStatus];
@@ -874,121 +819,6 @@ const ShipmentHistory: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* 6-Digit Verification Modal for Delivery Confirmation */}
-      {showVerificationModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-red-100 rounded-xl">
-                  <FiCheck className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">Verify Delivery Code</h3>
-                  <p className="text-sm text-gray-600 mt-0.5">Enter the 6-digit pickup code to confirm delivery</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="px-6 py-5">
-              {/* Error Message */}
-              {verificationError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl">
-                  <div className="flex items-start gap-2">
-                    <FiAlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-800">{verificationError}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Code Input */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                  6-Digit Pickup Code *
-                </label>
-                <input
-                  type="text"
-                  value={verificationCode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    setVerificationCode(value);
-                    setVerificationError('');
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && verificationCode.length === 6) {
-                      handleVerifyDeliveryCode();
-                    }
-                  }}
-                  placeholder="000000"
-                  maxLength={6}
-                  className="w-full px-4 py-3 text-center text-2xl font-mono font-bold border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 tracking-widest"
-                  autoFocus
-                />
-                <p className="text-xs text-gray-500 text-center">
-                  The customer should provide this code from their email or SMS
-                </p>
-              </div>
-
-              {/* Progress Indicator */}
-              <div className="mt-4">
-                <div className="flex gap-1.5 justify-center">
-                  {[...Array(6)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-2 w-8 rounded-full transition-all duration-200 ${
-                        i < verificationCode.length
-                          ? 'bg-red-600'
-                          : 'bg-gray-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-center text-xs text-gray-500 mt-2">
-                  {verificationCode.length}/6 digits entered
-                </p>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowVerificationModal(false);
-                    setVerificationShipmentId(null);
-                    setVerificationCode('');
-                    setVerificationError('');
-                  }}
-                  disabled={isVerifying}
-                  className="flex-1 px-4 py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleVerifyDeliveryCode}
-                  disabled={isVerifying || verificationCode.length !== 6}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold"
-                >
-                  {isVerifying ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    <>
-                      <FiCheck className="w-5 h-5" />
-                      Verify & Deliver
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Waybill Viewer Modal */}
       {showWaybill && (

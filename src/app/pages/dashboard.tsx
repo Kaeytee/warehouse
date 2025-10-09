@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
 import { DashboardService, type DashboardMetrics, type RecentPackage } from '../../services/DashboardService';
@@ -51,12 +51,22 @@ const Dashboard: React.FC = () => {
   const [recentPackages, setRecentPackages] = useState<RecentPackage[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [, setError] = useState<string | null>(null);
+  
+  // Prevent multiple simultaneous fetches (fixes re-authentication loop)
+  const fetchInProgress = useRef(false);
 
   /**
    * Fetch comprehensive dashboard data from database
    */
   const fetchDashboardData = async () => {
+    // Prevent multiple simultaneous requests (fixes re-auth loop)
+    if (fetchInProgress.current) {
+      console.log('⏳ Fetch already in progress, skipping...');
+      return;
+    }
+    
     try {
+      fetchInProgress.current = true;
       setIsLoadingMetrics(true);
       setError(null);
       
@@ -77,6 +87,7 @@ const Dashboard: React.FC = () => {
       setRecentPackages([]);
     } finally {
       setIsLoadingMetrics(false);
+      fetchInProgress.current = false;
     }
   };
 
@@ -89,16 +100,27 @@ const Dashboard: React.FC = () => {
     setIsRefreshing(false);
   };
 
-  // Load data on component mount
+  // Load data on component mount (only once when authenticated)
   useEffect(() => {
-    fetchDashboardData();
-  }, [user]);
+    if (isAuthenticated && !isLoading) {
+      fetchDashboardData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isLoading]);
 
-  // Auto-refresh every 5 minutes
+  // Auto-refresh every 5 minutes (only when authenticated)
   useEffect(() => {
-    const interval = setInterval(fetchDashboardData, 5 * 60 * 1000);
+    if (!isAuthenticated || isLoading) return;
+    
+    const interval = setInterval(() => {
+      if (!fetchInProgress.current) {
+        fetchDashboardData();
+      }
+    }, 5 * 60 * 1000);
+    
     return () => clearInterval(interval);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isLoading]);
 
   /**
    * Format date for display

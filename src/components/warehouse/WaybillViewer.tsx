@@ -9,10 +9,9 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FiPrinter, FiDownload, FiX, FiPackage, FiSend, FiMapPin, FiClock } from 'react-icons/fi';
+import { FiPrinter, FiDownload, FiX, FiPackage, FiSend, FiMapPin } from 'react-icons/fi';
 import { warehouseDocumentService } from '../../services/warehouseDocumentService';
 import type { WaybillData } from '../../services/warehouseDocumentService';
-import { barcodeQRGenerator } from '../../utils/barcodeQRGenerator';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
 import logo from '../../assets/image.png';
 
