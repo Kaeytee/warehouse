@@ -240,7 +240,6 @@ export class StatusUpdateService {
       return result;
       
     } catch (error) {
-      console.error('Error executing status update:', error);
       
       return {
         success: false,
@@ -335,7 +334,6 @@ export class StatusUpdateService {
           result.failed++;
         }
       } catch (error) {
-        console.error(`Error updating package ${packageId}:`, error);
         result.failed++;
         this.addFailedResult(result, packageId, 'package', `Unexpected error during package update: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -358,9 +356,8 @@ export class StatusUpdateService {
       const batchPromises = batch.map(packageId => 
         this.updateSinglePackage(packageId, newStatus, request, result)
           .then(success => ({ packageId, success }))
-          .catch(error => {
-            console.error(`Error updating package ${packageId}:`, error);
-            return { packageId, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+          .catch(() => {
+            return { packageId, success: false, error: 'Unknown error' };
           })
       );
 
@@ -459,7 +456,6 @@ export class StatusUpdateService {
 
       return true;
     } catch (error) {
-      console.error(`Error updating package ${packageId}:`, error);
       this.addFailedResult(result, packageId, 'package', `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -482,7 +478,6 @@ export class StatusUpdateService {
       // Get package information for destination data
       const packageInfo = await this.packageService.getPackageById(packageId);
       if (!packageInfo || !packageInfo.data) {
-        console.error('Failed to get package info for tracking point creation');
         return false;
       }
 
@@ -529,7 +524,6 @@ export class StatusUpdateService {
 
       return true;
     } catch (error) {
-      console.error('Error creating tracking point:', error);
       return false;
     }
   }
@@ -574,7 +568,6 @@ export class StatusUpdateService {
           result.failed++;
         }
       } catch (error) {
-        console.error(`Error updating group ${groupId}:`, error);
         result.failed++;
         this.addFailedResult(result, groupId, 'group', `Unexpected error during group update: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -597,8 +590,7 @@ export class StatusUpdateService {
       const batchPromises = batch.map(groupId => 
         this.updateSingleGroup(groupId, newStatus, request, result)
           .then(success => ({ groupId, success }))
-          .catch(error => {
-            console.error(`Error updating group ${groupId}:`, error);
+          .catch(() => {
             return { groupId, success: false };
           })
       );
@@ -671,7 +663,6 @@ export class StatusUpdateService {
 
       return true;
     } catch (error) {
-      console.error(`Error updating group ${groupId}:`, error);
       this.addFailedResult(result, groupId, 'group', `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
@@ -724,9 +715,7 @@ export class StatusUpdateService {
     try {
       // Since the validation service method is not implemented, we'll skip it for now
       // and just return basic validation
-      console.log('Validation service not fully implemented, using basic validation');
     } catch (error) {
-      console.error('Error during validation:', error);
       errors.push('Validation service error');
     }
 
@@ -737,21 +726,15 @@ export class StatusUpdateService {
    * Send notifications
    */
   private async sendNotifications(
-    request: StatusUpdateRequest,
+    _request: StatusUpdateRequest,
     result: StatusUpdateResult
   ): Promise<void> {
     try {
       // Implementation would depend on your notification service
       // This is a placeholder
-      console.log('Sending notifications for status update:', {
-        targetType: request.targetType,
-        targetCount: request.targetIds.length,
-        newStatus: request.newStatus
-      });
 
       result.notificationsSent = result.successful;
     } catch (error) {
-      console.error('Error sending notifications:', error);
       result.globalWarnings.push('Failed to send some notifications');
       result.warnings++;
     }
@@ -769,7 +752,6 @@ export class StatusUpdateService {
     try {
       // Get packages in the group - since the method is not implemented, 
       // we'll simulate the response structure
-      console.log(`Attempting to cascade group ${groupId} status to packages...`);
       
       // Since getPackagesInGroup is not implemented, we'll skip the actual cascading
       // and just log a warning
@@ -777,7 +759,6 @@ export class StatusUpdateService {
       result.warnings++;
       
     } catch (error) {
-      console.error('Error cascading group status to packages:', error);
       result.globalWarnings.push('Failed to cascade status to some packages');
       result.warnings++;
     }
@@ -855,23 +836,11 @@ export class StatusUpdateService {
    * @param result - Update result
    */
   private logOperationSummary(
-    request: StatusUpdateRequest,
-    result: StatusUpdateResult
+    _request: StatusUpdateRequest,
+    _result: StatusUpdateResult
   ): void {
-    console.log('Status update operation completed:', {
-      targetType: request.targetType,
-      targetCount: request.targetIds.length,
-      newStatus: request.newStatus,
-      successful: result.successful,
-      failed: result.failed,
-      warnings: result.warnings,
-      executionTime: result.executionTime,
-      trackingPointsCreated: result.trackingPointsCreated,
-      statusHistoryEntries: result.statusHistoryEntries,
-      notificationsSent: result.notificationsSent,
-      performedBy: request.performedBy,
-      source: request.source
-    });
+    // Status update operation completed
+    // Removed console logging for production
   }
 
   /**

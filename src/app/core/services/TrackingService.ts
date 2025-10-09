@@ -127,8 +127,6 @@ export class TrackingService {
   private initializeService(): void {
     // Set up real-time tracking infrastructure
     this.setupRealTimeTracking();
-    
-    console.log('TrackingService initialized');
   }
   
   /**
@@ -136,7 +134,6 @@ export class TrackingService {
    */
   private setupRealTimeTracking(): void {
     // TODO: Initialize WebSocket connections, message queues, etc.
-    console.log('Real-time tracking infrastructure initialized');
     
     // Initialize tracking subscribers map
     this.trackingSubscribers = new Map<string, Function[]>();
@@ -247,7 +244,6 @@ export class TrackingService {
       };
       
     } catch (error) {
-      console.error('Error creating tracking point:', error);
       return {
         success: false,
         error: 'Failed to create tracking point'
@@ -324,7 +320,7 @@ export class TrackingService {
     createdBy: string
   ): Promise<void> {
     try {
-      const historyEntry = StatusHistoryUtils.createHistoryEntry({
+      StatusHistoryUtils.createHistoryEntry({
         entityId: trackingPoint.packageId,
         entityType: EntityType.PACKAGE,
         newStatus: trackingPoint.status,
@@ -336,10 +332,8 @@ export class TrackingService {
       });
       
       // TODO: Save status history to database
-      console.log('Status history created for tracking point:', historyEntry);
       
     } catch (error) {
-      console.error('Error creating status history for tracking:', error);
     }
   }
   
@@ -355,7 +349,6 @@ export class TrackingService {
           try {
             callback(update);
           } catch (error) {
-            console.error('Error in tracking subscriber callback:', error);
           }
         });
       }
@@ -363,7 +356,6 @@ export class TrackingService {
       // TODO: Also broadcast to WebSocket connections, push notifications, etc.
       
     } catch (error) {
-      console.error('Error broadcasting tracking update:', error);
     }
   }
   
@@ -414,10 +406,8 @@ export class TrackingService {
       }
       
       // TODO: Save notifications to database and send to customers
-      console.log('Generated tracking notifications:', notifications);
       
     } catch (error) {
-      console.error('Error generating tracking notifications:', error);
     }
   }
   
@@ -508,7 +498,6 @@ export class TrackingService {
       };
       
     } catch (error) {
-      console.error('Error getting package timeline:', error);
       return {
         success: false,
         error: 'Failed to get package timeline'
@@ -549,7 +538,6 @@ export class TrackingService {
       };
       
     } catch (error) {
-      console.error('Error getting tracking analytics:', error);
       return {
         success: false,
         error: 'Failed to get tracking analytics'

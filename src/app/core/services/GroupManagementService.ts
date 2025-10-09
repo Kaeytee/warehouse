@@ -458,7 +458,7 @@ export class GroupManagementService {
    * Initialize the group management service
    */
   private initializeService(): void {
-    console.log('GroupManagementService initialized');
+    // Service initialized
   }
   
   /**
@@ -592,7 +592,6 @@ export class GroupManagementService {
       };
       
     } catch (error) {
-      console.error('Error creating group:', error);
       return {
         success: false,
         error: 'Failed to create group'
@@ -683,7 +682,6 @@ export class GroupManagementService {
         warnings: validationResult.warnings
       };
     } catch (error) {
-      console.error('Error updating group status:', error);
       return {
         success: false,
         error: 'Failed to update group status'
@@ -751,7 +749,6 @@ export class GroupManagementService {
       };
       
     } catch (error) {
-      console.error('Error getting group:', error);
       return {
         success: false,
         error: 'Failed to retrieve group'

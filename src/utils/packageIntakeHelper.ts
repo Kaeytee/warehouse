@@ -2,16 +2,14 @@
  * Package Intake Integration Helper
  * 
  * Utility functions to integrate Phase 1 features into package intake flow
- * Handles enhanced intake, code generation, and receipt creation
  * 
  * @author Senior Software Engineer
  * @version 1.0.0
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../config/supabase';
 import { barcodeQRGenerator } from './barcodeQRGenerator';
 import { warehouseDocumentService } from '../services/warehouseDocumentService';
-import { logger } from '../config/environment';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -63,10 +61,6 @@ class PackageIntakeHelper {
     request: EnhancedPackageIntakeRequest
   ): Promise<PackageIntakeResult> {
     try {
-      logger.info('Starting enhanced package intake:', { 
-        suiteNumber: request.userSuiteNumber,
-        staffId: request.warehouseStaffId 
-      });
 
       // Step 1: Call enhanced intake function with auto auth code generation
       const { data: intakeResult, error: intakeError } = await supabase.rpc(
@@ -90,12 +84,6 @@ class PackageIntakeHelper {
       if (!intakeResult || !intakeResult.success) {
         throw new Error(intakeResult?.error || 'Package intake failed');
       }
-
-      logger.info('Package intake successful:', {
-        packageId: intakeResult.package_id,
-        trackingNumber: intakeResult.tracking_number,
-        authCode: intakeResult.auth_code
-      });
 
       // Prepare result object
       const result: PackageIntakeResult = {
@@ -126,12 +114,7 @@ class PackageIntakeHelper {
           result.barcodeData = codes.barcode.dataUrl;
           result.qrCodeData = codes.qrCode.dataUrl;
 
-          logger.info('Codes generated and stored:', {
-            packageId: intakeResult.package_id
-          });
-
         } catch (codeError) {
-          logger.error('Failed to generate codes:', codeError);
           // Continue even if code generation fails
         }
       }
@@ -146,12 +129,7 @@ class PackageIntakeHelper {
 
           result.receiptData = receipt;
 
-          logger.info('Receipt generated:', {
-            receiptNumber: receipt.receipt_number
-          });
-
         } catch (receiptError) {
-          logger.error('Failed to generate receipt:', receiptError);
           // Continue even if receipt generation fails
         }
       }
@@ -159,7 +137,6 @@ class PackageIntakeHelper {
       return result;
 
     } catch (error) {
-      logger.error('Enhanced package intake failed:', error);
       
       return {
         success: false,
@@ -195,8 +172,6 @@ class PackageIntakeHelper {
         staffId
       );
 
-      logger.info('Codes generated for existing package:', { packageId });
-
       return {
         success: true,
         barcodeData: codes.barcode.dataUrl,
@@ -204,7 +179,6 @@ class PackageIntakeHelper {
       };
 
     } catch (error) {
-      logger.error('Failed to generate codes for package:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate codes'
@@ -226,18 +200,12 @@ class PackageIntakeHelper {
         staffId
       );
 
-      logger.info('Receipt generated for existing package:', { 
-        packageId,
-        receiptNumber: receipt.receipt_number 
-      });
-
       return {
         success: true,
         receipt
       };
 
     } catch (error) {
-      logger.error('Failed to generate receipt for package:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to generate receipt'
@@ -279,8 +247,6 @@ class PackageIntakeHelper {
       // Small delay to avoid overwhelming the system
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-
-    logger.info('Batch code generation complete:', results);
     return results;
   }
 
@@ -338,7 +304,6 @@ class PackageIntakeHelper {
       return { valid: true };
 
     } catch (error) {
-      logger.error('Failed to verify auth code:', error);
       return { 
         valid: false, 
         reason: error instanceof Error ? error.message : 'Verification failed' 
@@ -373,7 +338,6 @@ class PackageIntakeHelper {
       return data;
 
     } catch (error) {
-      logger.error('Failed to get enhanced package data:', error);
       throw error;
     }
   }

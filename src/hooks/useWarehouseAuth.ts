@@ -25,15 +25,7 @@ let globalListeners: Set<(state: typeof globalAuthState) => void> = new Set();
 let isGlobalInitialized = false;
 let currentGlobalUserId = '';
 
-// Simple logger for Meta-style debugging
-const logger = {
-  info: (message: string, data?: any) => console.log(`[INFO] ${message}`, data),
-  warn: (message: string, data?: any) => console.warn(`[WARN] ${message}`, data),
-  error: (message: string, data?: any) => console.error(`[ERROR] ${message}`, data),
-  debug: (message: string, data?: any) => console.debug(`[DEBUG] ${message}`, data),
-};
-
-// Simple toast notification
+// Toast fallback function
 const toast = ({ title, description }: { title: string; description: string; variant?: string; duration?: number }) => {
   alert(`${title}: ${description}`);
 };
@@ -68,7 +60,6 @@ const validateAndSetGlobalAuth = async (user: any, navigate: any) => {
 
   // Meta-style: Immediate ejection of unauthorized users
   if (!WarehouseAuthService.isAuthorizedRole(role)) {
-    logger.warn('Unauthorized access attempt blocked:', { email, role, userId: user.id });
     
     // Force logout
     await supabase.auth.signOut();
@@ -110,7 +101,6 @@ const validateAndSetGlobalAuth = async (user: any, navigate: any) => {
   
   // Only log once per user session to avoid spam
   if (!isGlobalInitialized) {
-    logger.info('Warehouse access granted:', { email, role, userId: user.id });
     isGlobalInitialized = true;
   }
 };
@@ -120,14 +110,13 @@ const initializeGlobalAuth = async () => {
   if (isGlobalInitialized) return;
   
   try {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) {
-      await validateAndSetGlobalAuth(data.user, () => {});
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await validateAndSetGlobalAuth(session.user, null);
     } else {
       updateGlobalAuthState({ isLoading: false });
     }
   } catch (error) {
-    logger.error('Global auth initialization error:', error);
     updateGlobalAuthState({ isLoading: false });
   }
 };

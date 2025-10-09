@@ -95,8 +95,8 @@ BEGIN
         -- Replace 'YOUR_ANON_KEY' with your actual anonymous key
         -- ====================================================================
         
-        edge_function_url := 'https://rsxxjcsmcrcxdmyuytzc.supabase.co/functions/v1/send-notification-email';
-        supabase_anon_key := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzeHhqY3NtY3JjeGRteXV5dHpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MDQ5MzUsImV4cCI6MjA3NDM4MDkzNX0.UzelR9c2VQqpaYUQEuZEwfyy6jUXKQ0jhq-DSP4Rmbg';
+        edge_function_url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-notification-email';
+        supabase_anon_key := 'YOUR_ANON_KEY';
         
         -- ====================================================================
         -- Call Edge Function via HTTP POST (matches your Edge Function format)
@@ -221,8 +221,8 @@ BEGIN
             AND u.email IS NOT NULL
         LOOP
             -- Set Edge Function URL and key
-            edge_function_url := 'https://rsxxjcsmcrcxdmyuytzc.supabase.co/functions/v1/send-notification-email';
-            supabase_anon_key := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzeHhqY3NtY3JjeGRteXV5dHpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4MDQ5MzUsImV4cCI6MjA3NDM4MDkzNX0.UzelR9c2VQqpaYUQEuZEwfyy6jUXKQ0jhq-DSP4Rmbg';
+            edge_function_url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-notification-email';
+            supabase_anon_key := 'YOUR_ANON_KEY';
             
             -- Call Edge Function for each user (matches your Edge Function format)
             SELECT net.http_post(

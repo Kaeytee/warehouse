@@ -10,7 +10,6 @@
 
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
-import { logger } from '../config/environment';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -113,8 +112,6 @@ class BarcodeQRGenerator {
       // Convert canvas to data URL
       const dataUrl = canvas.toDataURL('image/png');
 
-      logger.info('Barcode generated:', { trackingNumber, format: opts.format });
-
       return {
         dataUrl,
         rawData: trackingNumber,
@@ -122,7 +119,6 @@ class BarcodeQRGenerator {
       };
 
     } catch (error) {
-      logger.error('Failed to generate barcode:', error);
       throw new Error('Barcode generation failed');
     }
   }
@@ -147,8 +143,6 @@ class BarcodeQRGenerator {
         color: opts.color
       });
 
-      logger.info('QR code generated:', { dataLength: data.length });
-
       return {
         dataUrl,
         rawData: data,
@@ -156,7 +150,6 @@ class BarcodeQRGenerator {
       };
 
     } catch (error) {
-      logger.error('Failed to generate QR code:', error);
       throw new Error('QR code generation failed');
     }
   }
@@ -177,7 +170,6 @@ class BarcodeQRGenerator {
       return await this.generateQRCode(trackingUrl);
 
     } catch (error) {
-      logger.error('Failed to generate package QR code:', error);
       throw error;
     }
   }
@@ -198,7 +190,6 @@ class BarcodeQRGenerator {
       return await this.generateQRCode(trackingUrl);
 
     } catch (error) {
-      logger.error('Failed to generate shipment QR code:', error);
       throw error;
     }
   }
@@ -221,12 +212,9 @@ class BarcodeQRGenerator {
       // Generate QR code
       const qrCode = await this.generatePackageQRCode(trackingNumber, baseUrl);
 
-      logger.info('Complete package codes generated:', { trackingNumber });
-
       return { barcode, qrCode };
 
     } catch (error) {
-      logger.error('Failed to generate package codes:', error);
       throw error;
     }
   }
@@ -249,12 +237,9 @@ class BarcodeQRGenerator {
       // Generate QR code
       const qrCode = await this.generateShipmentQRCode(trackingNumber, baseUrl);
 
-      logger.info('Complete shipment codes generated:', { trackingNumber });
-
       return { barcode, qrCode };
 
     } catch (error) {
-      logger.error('Failed to generate shipment codes:', error);
       throw error;
     }
   }
@@ -288,7 +273,6 @@ class BarcodeQRGenerator {
       return svg.outerHTML;
 
     } catch (error) {
-      logger.error('Failed to generate barcode SVG:', error);
       throw new Error('Barcode SVG generation failed');
     }
   }
@@ -317,7 +301,6 @@ class BarcodeQRGenerator {
       return svgString;
 
     } catch (error) {
-      logger.error('Failed to generate QR code SVG:', error);
       throw new Error('QR code SVG generation failed');
     }
   }
@@ -338,12 +321,9 @@ class BarcodeQRGenerator {
         link.download = filename || `barcode-${trackingNumber}.png`;
         link.href = barcode.dataUrl;
         link.click();
-
-        logger.info('Barcode downloaded:', { trackingNumber });
       });
 
     } catch (error) {
-      logger.error('Failed to download barcode:', error);
       throw error;
     }
   }
@@ -364,12 +344,9 @@ class BarcodeQRGenerator {
         link.download = filename || `qrcode-${Date.now()}.png`;
         link.href = qrCode.dataUrl;
         link.click();
-
-        logger.info('QR code downloaded');
       });
 
     } catch (error) {
-      logger.error('Failed to download QR code:', error);
       throw error;
     }
   }
@@ -429,7 +406,6 @@ class BarcodeQRGenerator {
       });
 
     } catch (error) {
-      logger.error('Failed to print barcode:', error);
       throw error;
     }
   }
@@ -490,7 +466,6 @@ class BarcodeQRGenerator {
       });
 
     } catch (error) {
-      logger.error('Failed to print QR code:', error);
       throw error;
     }
   }
