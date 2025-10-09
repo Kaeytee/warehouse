@@ -200,8 +200,6 @@ class WarehouseDocumentService {
     staffId: string
   ): Promise<ReceiptData> {
     try {
-      logger.info('Generating package intake receipt:', { packageId, staffId });
-
       // Call database function
       const { data, error } = await supabase.rpc('generate_package_intake_receipt', {
         p_package_id: packageId,
@@ -215,11 +213,6 @@ class WarehouseDocumentService {
       if (!data || !data.success) {
         throw new Error(data?.error || 'Failed to generate receipt');
       }
-
-      logger.info('Package intake receipt generated:', { 
-        packageId,
-        receiptNumber: data.receipt_number
-      });
 
       return {
         receipt_id: data.receipt_id,
@@ -244,8 +237,6 @@ class WarehouseDocumentService {
     staffId: string
   ): Promise<ReceiptData> {
     try {
-      logger.info('Generating shipment receipt:', { shipmentId, staffId });
-
       // Call database function
       const { data, error } = await supabase.rpc('generate_shipment_receipt', {
         p_shipment_id: shipmentId,
@@ -259,11 +250,6 @@ class WarehouseDocumentService {
       if (!data || !data.success) {
         throw new Error(data?.error || 'Failed to generate receipt');
       }
-
-      logger.info('Shipment receipt generated:', { 
-        shipmentId,
-        receiptNumber: data.receipt_number
-      });
 
       return {
         receipt_id: data.receipt_id,

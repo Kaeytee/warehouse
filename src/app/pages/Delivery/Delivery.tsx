@@ -148,7 +148,7 @@ const Delivery: React.FC = () => {
       setArrivedShipments(transformed);
 
     } catch (err: any) {
-      console.error('Error fetching arrived shipments:', err);
+      // Error fetching arrived shipments
     }
   };
 
@@ -158,8 +158,6 @@ const Delivery: React.FC = () => {
   const fetchPackagesAwaitingPickup = async (): Promise<void> => {
     try {
       setIsLoadingPackages(true);
-
-      console.log('🔍 [DELIVERY DEBUG] Fetching packages with status=arrived...');
 
       const { data, error } = await supabase
         .from('packages')
@@ -188,23 +186,8 @@ const Delivery: React.FC = () => {
         .order('auth_code_generated_at', { ascending: false });
 
       if (error) {
-        console.error('❌ [DELIVERY DEBUG] Supabase error:', error);
         throw error;
       }
-
-      console.log(`✅ [DELIVERY DEBUG] Found ${data?.length || 0} packages with status=arrived`);
-      console.log('📦 [DELIVERY DEBUG] Raw package data:', data);
-
-      // Log each package's code status
-      data?.forEach((pkg: any, index: number) => {
-        console.log(`📦 Package ${index + 1}:`, {
-          package_id: pkg.package_id,
-          tracking: pkg.tracking_number,
-          delivery_code: pkg.delivery_auth_code || '❌ NO CODE',
-          code_generated_at: pkg.auth_code_generated_at || 'Never',
-          has_code: !!pkg.delivery_auth_code
-        });
-      });
 
       // Transform data
       const transformed = (data || []).map((pkg: any) => ({
@@ -224,13 +207,10 @@ const Delivery: React.FC = () => {
         has_delivery_code: !!pkg.delivery_auth_code
       }));
 
-      const packagesWithCodes = transformed.filter(p => p.has_delivery_code).length;
-      console.log(`📊 [DELIVERY DEBUG] Summary: ${packagesWithCodes} packages WITH codes, ${transformed.length - packagesWithCodes} WITHOUT codes`);
-
       setPackagesAwaitingPickup(transformed);
 
     } catch (err: any) {
-      console.error('❌ [DELIVERY DEBUG] Error fetching packages:', err);
+      // Error fetching packages
     } finally {
       setIsLoadingPackages(false);
     }
@@ -280,7 +260,6 @@ const Delivery: React.FC = () => {
    */
   const generateAndPrintDeliveryReceipt = async (packageData: VerificationData): Promise<void> => {
     try {
-      console.log('📄 Generating delivery receipt for:', packageData.packageId);
 
       // Fetch complete package details including arrival date
       const { data: packageDetails, error: packageError } = await supabase
@@ -603,11 +582,8 @@ const Delivery: React.FC = () => {
           }, 250);
         };
       }
-
-      console.log('✅ Delivery receipt generated and sent to printer');
     } catch (error) {
-      console.error('❌ Error generating delivery receipt:', error);
-      // Don't throw - we don't want to block the verification success
+      // Error generating delivery receipt - don't throw to avoid blocking verification
     }
   };
 
@@ -650,7 +626,6 @@ const Delivery: React.FC = () => {
       }
 
     } catch (err: any) {
-      console.error('Verification error:', err);
       setVerificationError(err.message || 'Failed to verify pickup code');
     } finally {
       setIsVerifying(false);

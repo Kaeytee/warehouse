@@ -74,12 +74,7 @@ const PackageIntake: React.FC = () => {
     setUserNotFound(false);
     setUserDetails(null);
 
-    const searchSuite = suiteNumber.trim().toUpperCase();
-    console.log('Searching for suite number:', searchSuite);
-    console.log('Original input:', suiteNumber);
-
     try {
-      console.log('Starting user search for suite:', suiteNumber);
       
       // Use ilike for case-insensitive search - this will match regardless of case
       const { data: users, error } = await supabase
@@ -87,17 +82,13 @@ const PackageIntake: React.FC = () => {
         .select('*')
         .ilike('suite_number', suiteNumber.trim());
 
-      console.log('Search results with ilike:', { users, error, searchTerm: suiteNumber.trim() });
-
       if (error) {
-        console.error('Database error:', error);
         setUserNotFound(true);
         setUserDetails(null);
         return;
       }
 
       if (!users || users.length === 0) {
-        console.log('No user found with suite number:', suiteNumber.trim());
         setUserNotFound(true);
         setUserDetails(null);
         return;
@@ -105,11 +96,9 @@ const PackageIntake: React.FC = () => {
 
       // Found user
       const foundUser = users[0];
-      console.log('User found:', foundUser);
       setUserDetails(foundUser);
       setUserNotFound(false);
     } catch (err) {
-      console.error('Error searching user:', err);
       setUserNotFound(true);
       setUserDetails(null);
     } finally {
@@ -208,7 +197,6 @@ const PackageIntake: React.FC = () => {
       }, 5000);
 
     } catch (err: any) {
-      console.error('Error submitting package:', err);
       setSubmitError(err.message || 'Failed to process package intake');
     } finally {
       setIsSubmitting(false);

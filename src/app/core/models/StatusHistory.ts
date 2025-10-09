@@ -318,8 +318,6 @@ export interface StatusHistoryAnalytics {
 export class StatusHistoryUtils {
   static async saveStatusHistory(historyEntry: StatusHistory): Promise<void> {
     // TODO: Implement actual save logic to database/storage
-    // For now, just log the entry to console
-    console.log('Saving status history entry:', historyEntry.id);
     
     // Simulate async operation
     return new Promise((resolve) => {

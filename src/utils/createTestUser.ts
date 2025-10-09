@@ -30,8 +30,6 @@ export const createTestUser = async () => {
       console.error('No user data returned from signup');
       return { success: false, error: 'No user data returned' };
     }
-
-    console.log('User created successfully:', authData.user.email);
     
     // Step 2: The trigger function should automatically create the user profile
     // Wait a moment for the trigger to complete
@@ -52,8 +50,6 @@ export const createTestUser = async () => {
       console.error('Error updating user profile:', updateError);
       return { success: false, error: updateError.message };
     }
-
-    console.log('User profile updated successfully');
     
     return { 
       success: true, 

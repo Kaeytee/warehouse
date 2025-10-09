@@ -18,6 +18,7 @@ export interface DashboardMetrics {
   processingPackages: number;
   shippedPackages: number;
   deliveredPackages: number;
+  arrivedPackages: number;
   
   // Shipment metrics
   totalShipments: number;
@@ -87,7 +88,7 @@ export class DashboardService {
       // Fetch package metrics
       const { data: packageStats, error: packageError } = await supabase
         .from('packages')
-        .select('status, weight, declared_value, created_at');
+        .select('status, weight, declared_value, created_at, received_at');
       
       if (packageError) throw packageError;
 
@@ -105,13 +106,24 @@ export class DashboardService {
       
       if (userError) throw userError;
 
+      // Calculate time boundaries for today's packages
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       // Calculate package metrics
       const totalPackages = packageStats?.length || 0;
       const pendingPackages = packageStats?.filter(p => p.status === 'pending').length || 0;
-      const receivedPackages = packageStats?.filter(p => p.status === 'received').length || 0;
+      // Today's received packages only (status='received' AND marked as received today)
+      // Use received_at if available, fallback to created_at for backward compatibility
+      const receivedPackages = packageStats?.filter(p => {
+        if (p.status !== 'received') return false;
+        const receivedDate = p.received_at ? new Date(p.received_at) : new Date(p.created_at);
+        return receivedDate >= today;
+      }).length || 0;
       const processingPackages = packageStats?.filter(p => p.status === 'processing').length || 0;
       const shippedPackages = packageStats?.filter(p => p.status === 'shipped').length || 0;
       const deliveredPackages = packageStats?.filter(p => p.status === 'delivered').length || 0;
+      const arrivedPackages = packageStats?.filter(p => p.status === 'arrived').length || 0;
 
       // Calculate shipment metrics
       const totalShipments = shipmentStats?.length || 0;
@@ -132,9 +144,7 @@ export class DashboardService {
       const processingRate = totalPackages > 0 ? ((processingPackages + shippedPackages + deliveredPackages) / totalPackages) * 100 : 0;
       const deliveryRate = totalShipments > 0 ? (deliveredShipments / totalShipments) * 100 : 0;
 
-      // Calculate time-based metrics
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Calculate time-based metrics (already defined 'today' above)
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
@@ -149,6 +159,7 @@ export class DashboardService {
         processingPackages,
         shippedPackages,
         deliveredPackages,
+        arrivedPackages,
         totalShipments,
         pendingShipments,
         inTransitShipments,
@@ -167,7 +178,6 @@ export class DashboardService {
       };
 
     } catch (error) {
-      console.error('Error fetching dashboard metrics:', error);
       throw new Error('Failed to fetch dashboard metrics');
     }
   }
@@ -217,7 +227,6 @@ export class DashboardService {
       })) || [];
 
     } catch (error) {
-      console.error('Error fetching recent packages:', error);
       throw new Error('Failed to fetch recent packages');
     }
   }
@@ -236,7 +245,6 @@ export class DashboardService {
       return count || 0;
 
     } catch (error) {
-      console.error('Error fetching notifications count:', error);
       return 0;
     }
   }
@@ -265,7 +273,6 @@ export class DashboardService {
       })) || [];
 
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       return [];
     }
   }
@@ -320,7 +327,6 @@ export class DashboardService {
       };
 
     } catch (error) {
-      console.error('Error fetching performance data:', error);
       return {
         dailyPackages: [],
         statusDistribution: [],
@@ -418,7 +424,6 @@ export class DashboardService {
       return true;
 
     } catch (error) {
-      console.error('Error updating package status:', error);
       return false;
     }
   }
@@ -443,7 +448,6 @@ export class DashboardService {
       return true;
 
     } catch (error) {
-      console.error('Error creating notification:', error);
       return false;
     }
   }

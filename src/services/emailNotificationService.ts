@@ -316,7 +316,6 @@ export const sendEmailNotification = async (data: EmailNotificationData): Promis
 
     // Skip if email notifications are disabled
     if (preferences && preferences.email_notifications === false) {
-      console.log(`📧 Email notifications disabled for user ${data.userId}`);
       return false;
     }
 
@@ -351,9 +350,6 @@ export const sendEmailNotification = async (data: EmailNotificationData): Promis
     const resendApiKey = import.meta.env.VITE_RESEND_API_KEY;
 
     if (!resendApiKey) {
-      console.warn('⚠️ VITE_RESEND_API_KEY not configured. Email notification skipped.');
-      console.log('📧 Email would have been sent to:', data.userEmail);
-      console.log('📧 Subject:', data.title);
       return false;
     }
 
@@ -372,8 +368,7 @@ export const sendEmailNotification = async (data: EmailNotificationData): Promis
       throw new Error(`Resend API error: ${JSON.stringify(error)}`);
     }
 
-    const result = await response.json();
-    console.log('✅ Email sent successfully:', result.id);
+    await response.json();
     return true;
 
   } catch (error) {

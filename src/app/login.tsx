@@ -75,6 +75,20 @@ const Login = () => {
       });
       
       if (error) {
+        // Log failed login attempt
+        await supabase.rpc('log_auth_event', {
+          p_event_type: 'login_failed',
+          p_user_id: null,
+          p_user_email: email.trim().toLowerCase(),
+          p_user_role: null,
+          p_session_id: null,
+          p_ip_address: null,
+          p_user_agent: navigator.userAgent,
+          p_status: 'failure',
+          p_details: null,
+          p_error_message: error.message
+        });
+        
         setLocalError('🚫 Access Denied');
         setIsLoading(false);
         return;
@@ -86,11 +100,29 @@ const Login = () => {
         return;
       }
       
+      // Log successful login
+      await supabase.rpc('log_auth_event', {
+        p_event_type: 'login_success',
+        p_user_id: data.user.id,
+        p_user_email: email.trim().toLowerCase(),
+        p_user_role: role,
+        p_session_id: data.session?.access_token?.substring(0, 20) || null,
+        p_ip_address: null,
+        p_user_agent: navigator.userAgent,
+        p_status: 'success',
+        p_details: null,
+        p_error_message: null
+      });
+      
+      // Update user's last login timestamp
+      await supabase.rpc('update_user_last_login', {
+        p_user_id: data.user.id,
+        p_ip_address: null
+      });
+      
       // Success! The useWarehouseAuth hook will handle the rest
-      console.log('✅ Login successful, redirecting...', { email, role });
       
     } catch (err) {
-      console.error('Login error:', err);
       setLocalError('🚫 Access Denied');
       setIsLoading(false);
     }

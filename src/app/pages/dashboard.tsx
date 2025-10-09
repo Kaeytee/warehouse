@@ -4,15 +4,10 @@ import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
 import { DashboardService, type DashboardMetrics, type RecentPackage } from '../../services/DashboardService';
 import {
   FiPackage,
-  FiClock,
-  FiAlertCircle,
   FiActivity,
   FiArrowRight,
   FiRefreshCw,
-  FiCalendar,
-  FiMapPin,
 } from 'react-icons/fi';
-import { HiOutlinePaperAirplane } from 'react-icons/hi2';
 
 /**
  * Professional Warehouse Dashboard Component
@@ -29,25 +24,11 @@ import { HiOutlinePaperAirplane } from 'react-icons/hi2';
  */
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, role, email, displayName, isLoading } = useWarehouseAuth();
-  
-  // Create user object for compatibility
-  const user = isAuthenticated ? {
-    email,
-    role,
-    name: displayName || 'Administrator',
-    fullName: displayName || 'Administrator'
-  } : null;
-  
-  // Helper function to check roles
-  const hasRole = (requiredRole: string) => {
-    return role === requiredRole || (requiredRole === 'admin' && role === 'superadmin');
-  };
+  const { isAuthenticated, isLoading } = useWarehouseAuth();
   
   // State management
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [recentPackages, setRecentPackages] = useState<RecentPackage[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [, setError] = useState<string | null>(null);
@@ -61,7 +42,6 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     // Prevent multiple simultaneous requests (fixes re-auth loop)
     if (fetchInProgress.current) {
-      console.log('⏳ Fetch already in progress, skipping...');
       return;
     }
     
@@ -78,10 +58,8 @@ const Dashboard: React.FC = () => {
       
       setDashboardMetrics(metrics);
       setRecentPackages(packages);
-      setLastUpdated(new Date());
       
     } catch (error) {
-      console.error('Error fetching warehouse data:', error);
       setError(error instanceof Error ? error.message : 'Failed to load dashboard data');
       setDashboardMetrics(null);
       setRecentPackages([]);
@@ -123,18 +101,6 @@ const Dashboard: React.FC = () => {
   }, [isAuthenticated, isLoading]);
 
   /**
-   * Format date for display
-   */
-  const formatDate = (date: Date) => {
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  /**
    * Get status color for packages
    */
   const getStatusColor = (status: string) => {
@@ -168,72 +134,26 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            {/* Main header content */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center space-x-4 mb-4 lg:mb-0">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-red-600 rounded-lg">
-                    <FiActivity className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Warehouse Operations</h1>
-                    <div className="flex items-center text-xs sm:text-sm text-gray-500 mt-1">
-                      <FiMapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                      <span className="break-all sm:break-normal">ALX-E2: 4700 Eisenhower Avenue, Alexandria, VA 22304</span>
-                    </div>
-                  </div>
-                </div>
-                {user && (
-                  <div className="hidden md:flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      user.role === 'superadmin' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'admin' ? 'bg-red-100 text-red-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      Administrator
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Controls section - stacks on mobile */}
-              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                {/* User role badge for mobile */}
-                {user && (
-                  <div className="md:hidden">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                      user.role === 'superadmin' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'admin' ? 'bg-red-100 text-red-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      Administrator
-                    </span>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between sm:justify-end space-x-4">
-                  <div className="text-left sm:text-right">
-                    <div className="text-sm text-gray-500">Last Updated</div>
-                    <div className="text-sm font-medium text-gray-900 flex items-center">
-                      <FiCalendar className="h-4 w-4 mr-1" />
-                      {formatDate(lastUpdated)}
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className="inline-flex items-center px-3 sm:px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                  >
-                    <FiRefreshCw className={`h-4 w-4 mr-1 sm:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline">Refresh</span>
-                  </button>
-                </div>
-              </div>
+      {/* Modern Header Banner */}
+      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 shadow-lg shadow-red-500/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
+                Warehouse Operations
+              </h1>
+              <p className="mt-2 text-base sm:text-lg text-red-100">
+                Real-time warehouse metrics and operations overview
+              </p>
             </div>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center px-4 py-2 border border-red-400 rounded-lg shadow-sm text-sm font-medium text-white bg-red-500/20 hover:bg-red-500/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-300 disabled:opacity-50 transition-all"
+            >
+              <FiRefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
         </div>
       </div>
@@ -241,8 +161,44 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
-          {/* Packages Received */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8">
+          {/* Active Shipments - First Card */}
+          <div className="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Active Shipments</p>
+                  </div>
+                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
+                    {dashboardMetrics?.inTransitShipments || 0}
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">In transit & shipped</p>
+                </div>
+                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
+                  <FiPackage className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end">
+                <button 
+                  onClick={() => navigate('/shipments')}
+                  className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
+                >
+                  <span className="hidden sm:inline">View Details</span>
+                  <span className="sm:hidden">Details</span>
+                  <FiArrowRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover/btn:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Packages Received - Second Card */}
           <div className="group relative bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg shadow-green-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-green-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -278,8 +234,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Packages Processing */}
-          <div className="group relative bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg shadow-red-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-red-500/40 transition-all duration-300 overflow-hidden">
+          {/* Awaiting Delivery - Third Card */}
+          <div className="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
@@ -289,97 +245,21 @@ const Dashboard: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Processing</p>
+                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Awaiting Delivery</p>
                   </div>
                   <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
-                    {dashboardMetrics?.processingPackages || 0}
+                    {dashboardMetrics?.arrivedPackages || 0}
                   </p>
-                  <p className="text-xs sm:text-sm text-white/80 font-medium">Ready to ship</p>
+                  <p className="text-xs sm:text-sm text-white/80 font-medium">Ready for pickup</p>
                 </div>
                 <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-                  <FiClock className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                  <FiPackage className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
               
               <div className="flex items-center justify-end">
                 <button 
-                  onClick={() => navigate('/inventory')}
-                  className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
-                >
-                  <span className="hidden sm:inline">View Details</span>
-                  <span className="sm:hidden">Details</span>
-                  <FiArrowRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Active Shipments */}
-          <div className="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
-            
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-3 sm:mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Active Shipments</p>
-                  </div>
-                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
-                    {dashboardMetrics?.inTransitShipments || 0}
-                  </p>
-                  <p className="text-xs sm:text-sm text-white/80 font-medium">In transit</p>
-                </div>
-                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-                  <HiOutlinePaperAirplane className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-end">
-                {hasRole('admin') || hasRole('superadmin') ? (
-                  <button 
-                    onClick={() => navigate('/shipments')}
-                    className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
-                  >
-                    <span className="hidden sm:inline">View Details</span>
-                    <span className="sm:hidden">Details</span>
-                    <FiArrowRight className="h-3 w-3 sm:h-4 sm:w-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                  </button>
-                ) : (
-                  <span className="text-xs sm:text-sm text-white/60 font-medium">Access Restricted</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Received Packages */}
-          <div className="group relative bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg shadow-amber-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-amber-500/40 transition-all duration-300 overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
-            
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-3 sm:mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Received Packages</p>
-                  </div>
-                  <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
-                    {dashboardMetrics?.pendingPackages || 0}
-                  </p>
-                  <p className="text-xs sm:text-sm text-white/80 font-medium">Awaiting processing</p>
-                </div>
-                <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-                  <FiAlertCircle className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-end">
-                <button 
-                  onClick={() => navigate('/inventory?status=pending')}
+                  onClick={() => navigate('/delivery')}
                   className="text-xs sm:text-sm text-white hover:text-white/90 font-semibold flex items-center space-x-1 hover:space-x-2 transition-all duration-200 group/btn"
                 >
                   <span className="hidden sm:inline">View Details</span>

@@ -76,7 +76,6 @@ const UserManagement: React.FC = () => {
       setFilteredUsers(usersData);
       setStats(statsData);
     } catch (err) {
-      console.error('Error loading users:', err);
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
       setLoading(false);
@@ -130,10 +129,8 @@ const UserManagement: React.FC = () => {
       // Reload users to reflect changes
       await loadUsers();
 
-      // Show success message (you can add a toast notification here)
-      console.log(`User status updated to ${newStatus}`);
+      // Success - user status updated
     } catch (err) {
-      console.error('Error updating user status:', err);
       setError(err instanceof Error ? err.message : 'Failed to update user status');
     } finally {
       setUpdatingUserId(null);

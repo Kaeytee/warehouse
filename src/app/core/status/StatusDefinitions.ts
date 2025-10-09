@@ -373,7 +373,6 @@ export class StatusUtils {
   static formatStatus(status: PackageStatus | string): string {
     // Handle case when status is not in metadata
     if (!status || !STATUS_METADATA[status]) {
-      console.warn(`Missing metadata for status: ${status}`); 
       return status ? String(status).replace(/_/g, ' ').toLowerCase()
                          .split(' ')
                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))

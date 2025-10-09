@@ -52,7 +52,6 @@ export class WarehouseService {
    */
   static async getPackages(): Promise<Package[]> {
     try {
-      console.log('Fetching packages from database...');
       
       // Fetch packages first, then get user data separately to avoid relationship ambiguity
       const { data: packagesData, error: packagesError } = await supabase
@@ -79,7 +78,7 @@ export class WarehouseService {
         .in('id', userIds);
 
       if (usersError) {
-        console.warn('Failed to fetch user data:', usersError.message);
+        // Failed to fetch user data
       }
 
       // Create a map of users by ID for quick lookup
@@ -87,8 +86,6 @@ export class WarehouseService {
         acc[user.id] = user;
         return acc;
       }, {} as Record<string, any>);
-
-      console.log(`Found ${packagesData.length} packages in database`);
 
       // Transform database data to match expected format with user data lookup
       return packagesData.map((pkg: any) => {
@@ -139,7 +136,6 @@ export class WarehouseService {
    */
   static async getWarehouseMetrics(): Promise<WarehouseMetrics> {
     try {
-      console.log('Fetching warehouse metrics from database...');
       
       // Get package counts by status directly from database
       const { data: packageCounts, error } = await supabase
@@ -220,7 +216,6 @@ export class WarehouseService {
    */
   static async updatePackageStatus(packageId: string, newStatus: string): Promise<{success: boolean, message: string}> {
     try {
-      console.log(`Updating package ${packageId} to status ${newStatus}`);
       
       const { data, error } = await supabase
         .from('packages')
@@ -240,7 +235,6 @@ export class WarehouseService {
         throw new Error(`Package ${packageId} not found in database`);
       }
 
-      console.log(`Successfully updated package ${packageId} in database`);
       return {
         success: true,
         message: `Package ${packageId} status updated to ${newStatus}`
@@ -257,7 +251,6 @@ export class WarehouseService {
    */
   static async insertSampleData(): Promise<{success: boolean, message: string}> {
     try {
-      console.log('Inserting sample package data...');
       
       // First, get a user ID from your users table
       const { data: users } = await supabase
@@ -320,7 +313,6 @@ export class WarehouseService {
         };
       }
 
-      console.log('Successfully inserted sample data:', data);
       return {
         success: true,
         message: `Successfully inserted ${data?.length || 0} sample packages`
@@ -348,7 +340,6 @@ export class WarehouseService {
     vendorName?: string;
   }): Promise<{success: boolean, packageId: string, message: string}> {
     try {
-      console.log('Processing package intake in database...', packageData);
       
       // Generate unique package ID and tracking number
       const packageId = `PKG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -381,7 +372,6 @@ export class WarehouseService {
         throw new Error('No data returned after package intake');
       }
 
-      console.log(`Successfully processed package intake: ${packageId}`);
       return {
         success: true,
         packageId: packageId,

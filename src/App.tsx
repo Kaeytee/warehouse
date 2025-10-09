@@ -15,6 +15,7 @@ import AnalysisReport from './app/pages/AnalysisReport/AnalysisReport';
 import Inventory from './app/pages/Inventory/Inventory';
 import About from './app/pages/About/About';
 import UserManagement from './app/pages/UserManagement/UserManagement';
+import Reports from './app/pages/Reports/Reports';
 import RouteGuard from './components/RouteGuard';
 import UnauthorizedPage from './components/UnauthorizedPage';
 // import GroupManagementDashboard from './app/pages/GroupManagement/GroupManagementDashboard'; // Removed from routing
@@ -161,10 +162,7 @@ const AppRoutes: React.FC = () => {
           path="/reports" 
           element={
             <RouteGuard requiredPermission="reports">
-              <div className="p-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Reports</h1>
-                <p className="text-gray-600">Advanced reporting functionality coming soon...</p>
-              </div>
+              <Reports />
             </RouteGuard>
           } 
         />

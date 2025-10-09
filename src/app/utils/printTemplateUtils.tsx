@@ -526,10 +526,6 @@ export const downloadPackageTicketPDF = (
   // This would require a PDF generation library like jsPDF or Puppeteer
   // For now, we'll use the print functionality as a fallback
   // The filename parameter is reserved for future PDF implementation
-  console.log('PDF download functionality not yet implemented. Using print dialog instead.');
-  if (filename) {
-    console.log(`Intended filename: ${filename}`);
-  }
   printPackageTicket(packageInfo, { title: 'Package Ticket' });
 };
 

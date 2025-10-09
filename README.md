@@ -101,6 +101,34 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
 
 ## Recent UI Changes
 
+- **Dashboard Modernization (2025-10-09)**
+  - Updated dashboard header to match PackageIntake modern gradient banner design
+  - Reorganized dashboard metric cards:
+    - **First Card (Amber)**: Active Shipments - showing shipments in transit & shipped (statuses: processing, in_transit, shipped)
+    - **Second Card (Green)**: Packages Received - showing **TODAY'S** packages with status 'received' (filtered by received_at >= today)
+    - **Third Card (Blue)**: Awaiting Delivery - showing packages ready for customer pickup (status: arrived)
+  - **Database Enhancement**: Added `received_at` timestamp column to packages table
+    - Tracks exact timestamp when package status changes to 'received'
+    - Automatic triggers set/clear `received_at` when status changes to/from 'received'
+    - Backfilled historical data with `created_at` as fallback
+    - Indexed for efficient daily metrics queries
+    - See `sql/96_add_received_at_tracking.sql` for implementation
+  - **Bug Fix**: Fixed package intake case-insensitive suite number lookup
+    - Backend function now uses `UPPER()` comparison instead of exact match
+    - Matches frontend ILIKE behavior for consistent user lookup
+    - Handles whitespace with TRIM()
+    - See `sql/97_fix_package_intake_case_insensitive.sql` for fix
+  - Removed "Processing" card to focus on core warehouse operations
+  - Added `arrivedPackages` metric to DashboardService to track packages with status "arrived"
+  - Updated `receivedPackages` metric to use `received_at` field with fallback to `created_at` for backward compatibility
+  - Streamlined grid layout from 4 columns to 3 columns (responsive: 1 col mobile, 2 col tablet, 3 col desktop)
+  - Integrated refresh button into header banner with professional styling
+  - Cleaned up unused imports and variables (FiClock, FiCalendar, FiMapPin, FiAlertCircle, HiOutlinePaperAirplane, hasRole)
+  - Removed all console.log and console.error statements from:
+    - `src/app/pages/dashboard.tsx`
+    - `src/services/DashboardService.ts`
+  - Production-ready code with clean architecture
+  - Improved visual consistency across all warehouse pages
 - Navbar
   - Removed the global search bar from `src/components/layout/AppNavbar.tsx`.
   - Implemented live unread notifications count using Supabase on the `notifications` table with real-time updates.
@@ -147,6 +175,29 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
   - User details: Name, email, contact information, suite number, role, status
   - Real-time statistics dashboard with 6 metric cards:
     - Total Users, Active Users, Inactive Users, Suspended Users, Clients, Admins
+
+#### 🔒 Secure Login Audit System (Added 2025-10-09)
+- **Enterprise-Grade Authentication Logging**: Complete audit trail of all login activity
+  - Tracks every login attempt (successful and failed)
+  - Records IP addresses, device types, user agents, and timestamps
+  - Automatic suspicious activity detection and risk scoring
+  - Brute force attack protection (flags >5 failed attempts from same IP in 15 minutes)
+- **Security Analytics**:
+  - Real-time monitoring of authentication events
+  - User login statistics with success/failure rates
+  - Device and location tracking for security analysis
+  - Comprehensive JSONB storage for additional context
+- **Compliance & Privacy**:
+  - Automatic 90-day retention policy (configurable)
+  - Immutable audit trail (logs cannot be modified or deleted)
+  - Admin-only access protected by RLS policies
+  - GDPR-compliant with no password logging
+- **Integration Features**:
+  - Automatic logging on every login/logout
+  - Helper functions: `log_auth_event()`, `update_user_last_login()`, `cleanup_old_audit_logs()`
+  - Pre-built views: `recent_login_attempts`, `suspicious_activity`, `user_login_stats`
+  - Full Reports page integration for security monitoring
+- See `AUDIT_LOGGING_GUIDE.md` for complete documentation
   - Professional table layout with sortable columns and hover effects
 - **Status Management**: 
   - Activate/Deactivate users with one-click toggle

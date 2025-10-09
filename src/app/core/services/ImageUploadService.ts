@@ -37,7 +37,6 @@ export class ImageUploadService {
       return data.url;
     } catch (error) {
       // Mock implementation for development - return a placeholder URL
-      console.warn('Image upload failed, using mock URL:', error);
       
       // In development, we'll simulate an upload delay and return a mock URL
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -45,7 +44,6 @@ export class ImageUploadService {
       // Generate a mock public URL (in real implementation, this would come from your server)
       const mockUrl = `https://your-server.com/images/${Date.now()}-${filename}`;
       
-      console.log('Mock upload successful, URL:', mockUrl);
       return mockUrl;
     }
   }
