@@ -316,8 +316,9 @@ export interface StatusHistoryAnalytics {
  * Helper functions for status history operations
  */
 export class StatusHistoryUtils {
-  static async saveStatusHistory(historyEntry: StatusHistory): Promise<void> {
+  static async saveStatusHistory(_historyEntry: StatusHistory): Promise<void> {
     // TODO: Implement actual save logic to database/storage
+    // Parameter prefixed with _ to indicate intentionally unused until implementation
     
     // Simulate async operation
     return new Promise((resolve) => {

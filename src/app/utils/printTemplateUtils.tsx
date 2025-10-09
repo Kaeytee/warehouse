@@ -517,15 +517,15 @@ export const printPackageTicket = (
  * This is a placeholder for future PDF generation functionality
  * 
  * @param packageInfo - Package information to convert to PDF
- * @param filename - Optional filename for the download (currently unused, reserved for future implementation)
+ * @param _filename - Optional filename for the download (currently unused, reserved for future implementation)
  */
 export const downloadPackageTicketPDF = (
   packageInfo: PrintablePackageInfo,
-  filename?: string
+  _filename?: string
 ): void => {
   // This would require a PDF generation library like jsPDF or Puppeteer
   // For now, we'll use the print functionality as a fallback
-  // The filename parameter is reserved for future PDF implementation
+  // The _filename parameter is reserved for future PDF implementation
   printPackageTicket(packageInfo, { title: 'Package Ticket' });
 };
 
