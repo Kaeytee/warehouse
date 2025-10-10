@@ -1,228 +1,198 @@
 /**
- * Warehouse Authentication Hook
- * Provides real-time session monitoring with database role-based access control
- * Fetches user role from database instead of email patterns
+ * Warehouse Authentication Hook - Fixed Version
  * 
- * SINGLETON PATTERN: Only one instance manages auth state to prevent duplicate logs
+ * Simplified authentication with proper session restoration
+ * Eliminates race conditions and stuck loading states
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { WarehouseAuthService } from "../services/warehouseAuthService";
 import { useNavigate } from "react-router-dom";
 
-// Global auth state to prevent multiple instances
-let globalAuthState = {
-  isAuthenticated: false,
-  role: '',
-  email: '',
-  displayName: '',
-  userId: '',
-  isLoading: true
-};
-
-let globalListeners: Set<(state: typeof globalAuthState) => void> = new Set();
-let isGlobalInitialized = false;
-let currentGlobalUserId = '';
-
-// Toast fallback function
-const toast = ({ title, description }: { title: string; description: string; variant?: string; duration?: number }) => {
-  alert(`${title}: ${description}`);
-};
-
-// Global auth management functions
-const updateGlobalAuthState = (newState: Partial<typeof globalAuthState>) => {
-  globalAuthState = { ...globalAuthState, ...newState };
-  globalListeners.forEach(listener => listener(globalAuthState));
-};
-
-const validateAndSetGlobalAuth = async (user: any, navigate: any) => {
-  if (!user) {
-    updateGlobalAuthState({ 
-      isAuthenticated: false, 
-      role: '', 
-      email: '', 
-      displayName: '', 
-      userId: '', 
-      isLoading: false 
-    });
-    currentGlobalUserId = '';
-    return;
-  }
-
-  // Prevent processing the same user multiple times
-  if (currentGlobalUserId === user.id) {
-    return;
-  }
-
-  const email = user.email || '';
-  
-  // Fetch role from database instead of email pattern
-  const role = await WarehouseAuthService.fetchUserRole(user.id);
-
-  // Database-driven: Immediate ejection of unauthorized users
-  if (!WarehouseAuthService.isAuthorizedRole(role)) {
-    
-    // Force logout
-    await supabase.auth.signOut();
-    
-    // Show access denied message
-    toast({
-      title: "🚫 Access Denied",
-      description: "You do not have permission to access the warehouse system",
-      variant: "destructive",
-      duration: 6000,
-    });
-    
-    // Redirect to login if navigate function provided
-    if (navigate) {
-      navigate('/login', { replace: true });
-    }
-    
-    updateGlobalAuthState({ 
-      isAuthenticated: false, 
-      role: '', 
-      email: '', 
-      displayName: '', 
-      userId: '', 
-      isLoading: false 
-    });
-    return;
-  }
-
-  // Set currentUserId to prevent duplicate processing
-  currentGlobalUserId = user.id;
-  
-  // User is authorized - set auth state
-  updateGlobalAuthState({ 
-    isAuthenticated: true, 
-    role, 
-    email,
-    displayName: WarehouseAuthService.getRoleDisplayName(role),
-    userId: user.id,
-    isLoading: false
-  });
-  
-  // Only log once per user session to avoid spam
-  if (!isGlobalInitialized) {
-    isGlobalInitialized = true;
-  }
-};
-
-// Initialize global auth state (only once)
-const initializeGlobalAuth = async () => {
-  if (isGlobalInitialized) return;
-  
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await validateAndSetGlobalAuth(session.user, null);
-    } else {
-      updateGlobalAuthState({ isLoading: false });
-    }
-  } catch (error) {
-    updateGlobalAuthState({ isLoading: false });
-  }
-};
-
-// Set up global auth listener (only once)
-if (!isGlobalInitialized) {
-  initializeGlobalAuth();
-  
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_OUT' || !session) {
-      updateGlobalAuthState({ 
-        isAuthenticated: false, 
-        role: '', 
-        email: '', 
-        displayName: '', 
-        userId: '', 
-        isLoading: false 
-      });
-      currentGlobalUserId = '';
-      isGlobalInitialized = false;
-    } else if (event === 'SIGNED_IN') {
-      await validateAndSetGlobalAuth(session.user, () => {});
-    }
-  });
+interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any;
+  error: string | null;
 }
 
+const initialAuthState: AuthState = {
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+  error: null,
+};
+
 export const useWarehouseAuth = () => {
-  const [authState, setAuthState] = useState(globalAuthState);
+  const [authState, setAuthState] = useState<AuthState>(initialAuthState);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Subscribe to global auth state changes
-    const listener = (newState: typeof globalAuthState) => {
-      setAuthState(newState);
-    };
-    
-    globalListeners.add(listener);
-    
-    // Set initial state
-    setAuthState(globalAuthState);
-    
-    // Initialize if not already done
-    if (!isGlobalInitialized) {
-      initializeGlobalAuth();
-    }
-
-    // Cleanup
-    return () => {
-      globalListeners.delete(listener);
-    };
+  const updateAuthState = useCallback((updates: Partial<AuthState>) => {
+    setAuthState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Handle navigation for this specific instance
+  const handleAuthError = useCallback((error: string) => {
+    updateAuthState({ 
+      isLoading: false, 
+      isAuthenticated: false, 
+      user: null, 
+      error 
+    });
+  }, [updateAuthState]);
+
+  const validateAndSetUser = useCallback(async (user: any) => {
+    if (!user) {
+      updateAuthState({ 
+        isLoading: false, 
+        isAuthenticated: false, 
+        user: null 
+      });
+      return;
+    }
+
+    try {
+      // Fetch user role from database
+      const role = await WarehouseAuthService.fetchUserRole(user.id);
+      
+      // Check if role is authorized
+      if (!WarehouseAuthService.isAuthorizedRole(role)) {
+        await supabase.auth.signOut();
+        handleAuthError('Access denied: Insufficient permissions');
+        return;
+      }
+
+      // Set authenticated state
+      updateAuthState({
+        isAuthenticated: true,
+        isLoading: false,
+        user: {
+          id: user.id,
+          email: user.email,
+          role,
+          displayName: WarehouseAuthService.getRoleDisplayName(role),
+        },
+        error: null
+      });
+    } catch (error) {
+      console.error('Auth validation error:', error);
+      handleAuthError('Authentication validation failed');
+    }
+  }, [updateAuthState, handleAuthError]);
+
+  // Initialize authentication state
   useEffect(() => {
-    if (!authState.isAuthenticated && !authState.isLoading && window.location.pathname !== '/login') {
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          if (isMounted) handleAuthError('Session validation failed');
+          return;
+        }
+
+        if (session?.user && isMounted) {
+          await validateAndSetUser(session.user);
+        } else if (isMounted) {
+          updateAuthState({ isLoading: false, isAuthenticated: false, user: null });
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (isMounted) handleAuthError('Authentication initialization failed');
+      }
+    };
+
+    initializeAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!isMounted) return;
+
+        console.log('Auth state change:', event, !!session);
+
+        if (event === 'SIGNED_OUT' || !session) {
+          updateAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error: null
+          });
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          await validateAndSetUser(session.user);
+        }
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [validateAndSetUser, updateAuthState, handleAuthError]);
+
+  // Handle navigation based on auth state
+  useEffect(() => {
+    if (!authState.isLoading && !authState.isAuthenticated && window.location.pathname !== '/login') {
       navigate('/login', { replace: true });
     }
   }, [authState.isAuthenticated, authState.isLoading, navigate]);
 
-  // Return auth state with methods
+  const signIn = async (email: string, password: string) => {
+    updateAuthState({ isLoading: true, error: null });
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        handleAuthError(error.message);
+        return { success: false, error: error.message };
+      }
+      
+      if (data.user) {
+        await validateAndSetUser(data.user);
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Login failed' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed';
+      handleAuthError(message);
+      return { success: false, error: message };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      updateAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        error: null
+      });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force local state reset even if API call fails
+      updateAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        error: null
+      });
+    }
+  };
+
   return {
     ...authState,
-    user: authState.isAuthenticated ? { 
-      id: authState.userId, 
-      email: authState.email, 
-      role: authState.role as any,
-      firstName: authState.displayName.split(' ')[0] || '',
-      lastName: authState.displayName.split(' ')[1] || '',
-      fullName: authState.displayName,
-      status: 'active' as const,
-      suiteNumber: undefined,
-      phoneNumber: undefined,
-      address: undefined,
-      emailVerified: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    } : null,
-    signIn: async (email: string, password: string) => {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return { success: false, error: error.message };
-        if (data.user) {
-          await validateAndSetGlobalAuth(data.user, navigate);
-        }
-        return { success: true };
-      } catch (err) {
-        return { success: false, error: err instanceof Error ? err.message : 'Login failed' };
-      }
-    },
-    signOut: async () => {
-      await supabase.auth.signOut();
-      updateGlobalAuthState({ 
-        isAuthenticated: false, 
-        role: '', 
-        email: '', 
-        displayName: '', 
-        userId: '', 
-        isLoading: false 
-      });
-      navigate('/login', { replace: true });
-    },
-    hasRole: (role: string) => authState.role === role,
-    error: null
+    signIn,
+    signOut,
+    hasRole: (role: string) => authState.user?.role === role,
   };
 };
