@@ -832,9 +832,9 @@ const CreateShipment: React.FC = () => {
                     onChange={handleInputChange}
                     className="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 text-gray-900 bg-white hover:border-gray-300 cursor-pointer"
                   >
-                    <option value="standard">Standard (5-7 business days)</option>
-                    <option value="express">Express (3-5 business days)</option>
-                    <option value="overnight">Overnight (1-2 business days)</option>
+                    <option value="standard">Standard</option>
+                    {/* <option value="express">Express</option>
+                    <option value="overnight">Overnight</option> */}
                   </select>
                   <p className="mt-2 text-sm text-gray-500">
                     📅 Estimated delivery will be calculated automatically based on service type
