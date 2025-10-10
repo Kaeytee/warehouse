@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+      "dest": "/dist/index.html"
+    }
+  ],
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build:prod"
+}
