@@ -2,14 +2,20 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/index.html",
+      "src": "dist/**/*",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+      "src": "/((?!api|_next/static|_next/image|assets|favicon.ico|robots.txt|sitemap.xml).*)",
       "dest": "/dist/index.html"
+    },
+    {
+      "src": "/assets/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
     }
   ],
   "outputDirectory": "dist",
