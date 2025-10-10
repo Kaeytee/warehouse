@@ -159,12 +159,11 @@ class BarcodeQRGenerator {
    * Creates QR code linking to public tracking page
    */
   async generatePackageQRCode(
-    trackingNumber: string,
-    baseUrl: string = window.location.origin
+    trackingNumber: string
   ): Promise<GeneratedCode> {
     try {
-      // Build tracking URL
-      const trackingUrl = `${baseUrl}/track/${trackingNumber}`;
+      // Build tracking URL with new format
+      const trackingUrl = `https://www.vanguardcargo.co/app/tracking?id=${trackingNumber}`;
 
       // Generate QR code with tracking URL
       return await this.generateQRCode(trackingUrl);
@@ -179,12 +178,11 @@ class BarcodeQRGenerator {
    * Creates QR code linking to shipment tracking page
    */
   async generateShipmentQRCode(
-    trackingNumber: string,
-    baseUrl: string = window.location.origin
+    trackingNumber: string
   ): Promise<GeneratedCode> {
     try {
-      // Build tracking URL
-      const trackingUrl = `${baseUrl}/track/shipment/${trackingNumber}`;
+      // Build tracking URL with new format
+      const trackingUrl = `https://www.vanguardcargo.co/app/tracking?id=${trackingNumber}`;
 
       // Generate QR code with tracking URL
       return await this.generateQRCode(trackingUrl);
@@ -199,8 +197,7 @@ class BarcodeQRGenerator {
    * Creates both barcode and QR code for package
    */
   async generatePackageCodes(
-    trackingNumber: string,
-    baseUrl?: string
+    trackingNumber: string
   ): Promise<{
     barcode: GeneratedCode;
     qrCode: GeneratedCode;
@@ -210,7 +207,7 @@ class BarcodeQRGenerator {
       const barcode = await this.generateBarcode(trackingNumber);
 
       // Generate QR code
-      const qrCode = await this.generatePackageQRCode(trackingNumber, baseUrl);
+      const qrCode = await this.generatePackageQRCode(trackingNumber);
 
       return { barcode, qrCode };
 
@@ -224,8 +221,7 @@ class BarcodeQRGenerator {
    * Creates both barcode and QR code for shipment
    */
   async generateShipmentCodes(
-    trackingNumber: string,
-    baseUrl?: string
+    trackingNumber: string
   ): Promise<{
     barcode: GeneratedCode;
     qrCode: GeneratedCode;
@@ -235,7 +231,7 @@ class BarcodeQRGenerator {
       const barcode = await this.generateBarcode(trackingNumber);
 
       // Generate QR code
-      const qrCode = await this.generateShipmentQRCode(trackingNumber, baseUrl);
+      const qrCode = await this.generateShipmentQRCode(trackingNumber);
 
       return { barcode, qrCode };
 
