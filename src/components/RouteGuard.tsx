@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useWarehouseAuth } from '../hooks/useWarehouseAuth';
 import type { WarehousePermission } from '../types/warehouse';
+import { ROLE_PERMISSIONS } from '../types/warehouse';
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -11,23 +12,23 @@ interface RouteGuardProps {
 
 /**
  * RouteGuard Component
- * 
+ *
  * Protects routes based on user permissions with role-based access control.
- * Supports warehouse_admin, admin, and superadmin roles with proper permission checking.
+ * Uses proper permission checking based on role definitions.
  * Redirects unauthorized users to /unauthorized page.
- * 
+ *
  * @param children - The component to render if authorized
  * @param requiredPermission - The permission required to access this route
  * @param redirectTo - Optional custom redirect path
  */
-const RouteGuard: React.FC<RouteGuardProps> = ({ 
-  children, 
-  requiredPermission, 
-  redirectTo = '/unauthorized' 
+const RouteGuard: React.FC<RouteGuardProps> = ({
+  children,
+  requiredPermission,
+  redirectTo = '/unauthorized'
 }) => {
-  const { isAuthenticated, role, isLoading } = useWarehouseAuth();
+  const { isAuthenticated, user, isLoading } = useWarehouseAuth();
   const location = useLocation();
-  
+
   // Do not block UI during auth loading to improve perceived performance
   // Previously showed a full-screen red loader here; removed per UX requirement
 
@@ -46,10 +47,10 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check if user has the required permission
-  const hasAccess = ['warehouse_admin', 'admin', 'superadmin'].includes(role);
-  
-  // For now, we'll use basic role checking, but this can be enhanced with actual permission checking
+  // Check if user has the required permission based on their role
+  const userPermissions = ROLE_PERMISSIONS[user?.role as keyof typeof ROLE_PERMISSIONS] || [];
+  const hasAccess = userPermissions.includes(requiredPermission);
+
   if (!hasAccess) {
     // Log unauthorized access attempt
     const logUnauthorizedAccess = (window as { __logUnauthorizedAccess?: (resource: string) => void }).__logUnauthorizedAccess;
@@ -59,15 +60,15 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
 
     // Redirect to unauthorized page with state
     return (
-      <Navigate 
-        to={redirectTo} 
-        state={{ 
+      <Navigate
+        to={redirectTo}
+        state={{
           from: location,
           requiredPermission,
-          userRole: role,
+          userRole: user?.role,
           attemptedPath: location.pathname
-        }} 
-        replace 
+        }}
+        replace
       />
     );
   }

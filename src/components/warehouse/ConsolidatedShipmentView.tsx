@@ -44,7 +44,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
   // STATE MANAGEMENT
   // ========================================
 
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
 
   // Data state
   const [shipmentData, setShipmentData] = useState<ConsolidatedShipmentDetails | null>(null);
@@ -65,10 +65,10 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
    * Fetches complete consolidation data
    */
   useEffect(() => {
-    if (shipmentId && userId) {
+    if (shipmentId && user?.id) {
       loadShipmentDetails();
     }
-  }, [shipmentId, userId]);
+  }, [shipmentId, user?.id]);
 
   // ========================================
   // DATA LOADING
@@ -79,7 +79,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
    * Gets complete shipment with all packages
    */
   const loadShipmentDetails = async (): Promise<void> => {
-    if (!userId) return;
+    if (!user?.id) return;
 
     setIsLoading(true);
     setError('');
@@ -87,7 +87,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
     try {
       const details = await warehouseDocumentService.getConsolidatedShipmentDetails(
         shipmentId,
-        userId
+        user.id
       );
 
       setShipmentData(details);
@@ -109,7 +109,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
    * Creates receipts for all packages and triggers print dialog
    */
   const handleGeneratePackageReceipts = async (): Promise<void> => {
-    if (!userId || !shipmentData) return;
+    if (!user?.id || !shipmentData) return;
 
     setIsGeneratingReceipts(true);
     setError('');
@@ -121,7 +121,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
           try {
             const receipt = await warehouseDocumentService.generatePackageIntakeReceipt(
               pkg.id || pkg.package_uuid,
-              userId
+              user.id
             );
             return {
               package: pkg,
@@ -301,7 +301,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
    * Generates PDFs for waybill and all package receipts, then zips them
    */
   const handleDownloadAllDocuments = async (): Promise<void> => {
-    if (!userId || !shipmentData) return;
+    if (!user?.id || !shipmentData) return;
 
     setIsDownloadingAll(true);
     setError('');
@@ -315,7 +315,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
       
       // Generate Waybill PDF
       try {
-        const waybill = await warehouseDocumentService.generateWaybill(shipmentId, userId);
+        const waybill = await warehouseDocumentService.generateWaybill(shipmentId, user.id);
         
         // Create waybill HTML content
         const waybillHTML = generateWaybillHTML(waybill);
@@ -330,7 +330,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
         try {
           const receipt = await warehouseDocumentService.generatePackageIntakeReceipt(
             pkg.id,  // Use UUID, not package_id string
-            userId
+            user.id
           );
           
           const receiptHTML = generateReceiptHTML(receipt);

@@ -31,7 +31,7 @@ interface Shipment {
 }
 
 const ShipmentHistory: React.FC = () => {
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -126,14 +126,14 @@ const ShipmentHistory: React.FC = () => {
 
     try {
       // Update status in database using the warehouse shipment service
-      if (!userId) {
+      if (!user?.id) {
         throw new Error('User not authenticated');
       }
       
       await warehouseShipmentService.updateShipmentStatus(
         shipmentId, 
         newStatus, 
-        userId, 
+        user.id, 
         `Status updated to ${newStatus}`
       );
       
@@ -232,7 +232,7 @@ const ShipmentHistory: React.FC = () => {
    * Generates and opens all package receipts in print windows
    */
   const handlePrintPackageReceipts = async (shipmentId: string) => {
-    if (!userId) {
+    if (!user?.id) {
       setError('User not authenticated');
       return;
     }
@@ -242,7 +242,7 @@ const ShipmentHistory: React.FC = () => {
 
     try {
       // Fetch full shipment details with packages
-      const shipmentDetails = await warehouseDocumentService.getConsolidatedShipmentDetails(shipmentId, userId);
+      const shipmentDetails = await warehouseDocumentService.getConsolidatedShipmentDetails(shipmentId, user.id);
       
       if (!shipmentDetails.packages || shipmentDetails.packages.length === 0) {
         throw new Error('No packages found for this shipment');
@@ -254,7 +254,7 @@ const ShipmentHistory: React.FC = () => {
           try {
             const receipt = await warehouseDocumentService.generatePackageIntakeReceipt(
               pkg.id || pkg.package_uuid,
-              userId
+              user.id
             );
             return {
               package: pkg,

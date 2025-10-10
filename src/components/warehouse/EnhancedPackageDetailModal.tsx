@@ -67,7 +67,7 @@ export const EnhancedPackageDetailModal: React.FC<EnhancedPackageDetailModalProp
   // STATE MANAGEMENT
   // ========================================
 
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
 
   // Modal state
   const [showVerification, setShowVerification] = useState<boolean>(false);
@@ -87,7 +87,7 @@ export const EnhancedPackageDetailModal: React.FC<EnhancedPackageDetailModalProp
    * Creates package intake receipt
    */
   const handleGenerateReceipt = async (): Promise<void> => {
-    if (!userId) {
+    if (!user?.id) {
       setError('User not authenticated');
       return;
     }
@@ -98,7 +98,7 @@ export const EnhancedPackageDetailModal: React.FC<EnhancedPackageDetailModalProp
     try {
       const generatedReceipt = await warehouseDocumentService.generatePackageIntakeReceipt(
         packageData.id,
-        userId
+        user.id
       );
 
       setReceipt(generatedReceipt);

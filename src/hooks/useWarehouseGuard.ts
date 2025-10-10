@@ -6,16 +6,16 @@
 import { useWarehouseAuth } from "./useWarehouseAuth";
 
 export const useWarehouseGuard = () => {
-  const { isAuthenticated, role, isLoading } = useWarehouseAuth();
-  
-  // Meta-style: Strict authorization check
-  const canAccess = !isLoading && isAuthenticated && ['warehouse_admin', 'admin', 'superadmin'].includes(role);
+  const { isAuthenticated, user, isLoading } = useWarehouseAuth();
 
-  return { 
-    isAuthorized: canAccess, 
-    isLoading, 
-    role,
-    hasAdminAccess: role === 'admin' || role === 'superadmin',
-    hasSuperAdminAccess: role === 'superadmin'
+  // Meta-style: Strict authorization check
+  const canAccess = !isLoading && isAuthenticated && ['warehouse_admin', 'admin', 'superadmin'].includes(user?.role || '');
+
+  return {
+    isAuthorized: canAccess,
+    isLoading,
+    role: user?.role,
+    hasAdminAccess: user?.role === 'admin' || user?.role === 'superadmin',
+    hasSuperAdminAccess: user?.role === 'superadmin'
   };
 };

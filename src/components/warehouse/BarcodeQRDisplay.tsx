@@ -47,7 +47,7 @@ export const BarcodeQRDisplay: React.FC<BarcodeQRDisplayProps> = ({
   // STATE MANAGEMENT
   // ========================================
 
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
   
   // Code data state
   const [barcodeData, setBarcodeData] = useState<string | null>(existingBarcodeData || null);
@@ -95,20 +95,20 @@ export const BarcodeQRDisplay: React.FC<BarcodeQRDisplayProps> = ({
       setQRCodeData(codes.qrCode.dataUrl);
 
       // Store in database if user is authenticated
-      if (userId) {
+      if (user?.id) {
         if (entityType === 'package') {
           await warehouseDocumentService.storePackageCodes(
             entityId,
             codes.barcode.dataUrl,
             codes.qrCode.dataUrl,
-            userId
+            user.id
           );
         } else {
           await warehouseDocumentService.storeShipmentCodes(
             entityId,
             codes.barcode.dataUrl,
             codes.qrCode.dataUrl,
-            userId
+            user.id
           );
         }
       }

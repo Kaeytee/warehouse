@@ -37,7 +37,7 @@ interface ProcessingPackage {
  */
 const CreateShipment: React.FC = () => {
   // Authentication and state management
-  const { isAuthenticated, userId } = useWarehouseAuth();
+  const { isAuthenticated, user } = useWarehouseAuth();
   const [receivedPackages, setReceivedPackages] = useState<ProcessingPackage[]>([]);
   const [filteredPackages, setFilteredPackages] = useState<ProcessingPackage[]>([]);
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
@@ -273,7 +273,7 @@ const CreateShipment: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isAuthenticated || !userId) {
+    if (!isAuthenticated || !user?.id) {
       setError('User authentication required');
       return;
     }
@@ -299,7 +299,7 @@ const CreateShipment: React.FC = () => {
       // Call the create_shipment_from_packages function
       const { data, error } = await supabase.rpc('create_shipment_from_packages', {
         p_package_ids: packageIds,
-        p_warehouse_staff_id: userId,
+        p_warehouse_staff_id: user.id,
         p_recipient_name: formData.recipientName,
         p_recipient_phone: formData.recipientPhone || null,
         p_delivery_address: formData.deliveryAddress,
@@ -331,7 +331,7 @@ const CreateShipment: React.FC = () => {
         await Promise.all(
           selectedPackageIds.map(async (packageUuid) => {
             try {
-              await warehouseDocumentService.generatePackageIntakeReceipt(packageUuid, userId);
+              await warehouseDocumentService.generatePackageIntakeReceipt(packageUuid, user.id);
             } catch (pkgError) {
               console.error(`Failed to generate receipt for package ${packageUuid}:`, pkgError);
             }
@@ -341,7 +341,7 @@ const CreateShipment: React.FC = () => {
         // Step 2: Generate shipment receipt
         const generatedReceipt = await warehouseDocumentService.generateShipmentReceipt(
           data.shipment_id,
-          userId
+          user.id
         );
         setReceipt(generatedReceipt);
         

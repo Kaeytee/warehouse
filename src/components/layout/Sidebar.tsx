@@ -53,23 +53,23 @@ interface PendingTasks {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onToggle }) => {
   const navigate = useNavigate();
-  const { isAuthenticated, role, email, displayName } = useWarehouseAuth();
-  
+  const { isAuthenticated, user: authUser } = useWarehouseAuth();
+
   // Create user object for compatibility
-  const user = isAuthenticated ? {
-    email,
-    role,
-    name: displayName || 'Administrator',
-    fullName: displayName || 'Administrator'
+  const user = isAuthenticated && authUser ? {
+    email: authUser.email,
+    role: authUser.role,
+    name: authUser.displayName || 'Administrator',
+    fullName: authUser.displayName || 'Administrator'
   } : null;
-  
+
   // Logout function
   const logout = async () => {
     await supabase.auth.signOut();
   };
-  
+
   // Loading states
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLogoutLoading, setLogoutLoading] = useState(false);
   const [pendingTasks, setPendingTasks] = useState<PendingTasks>({
     incomingRequests: 0,
     pendingInventory: 0,
@@ -138,7 +138,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onToggle }) => {
    * Handle user logout with confirmation
    */
   const handleLogout = async () => {
-    setIsLoading(true);
+    setLogoutLoading(true);
     
     try {
       // Simulate logout delay
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onToggle }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setIsLoading(false);
+      setLogoutLoading(false);
     }
   };
 
@@ -265,14 +265,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onToggle }) => {
         <div className="mt-auto">
           <button 
             onClick={handleLogout}
-            disabled={isLoading}
+            disabled={isLogoutLoading}
             className="flex items-center w-full px-6 py-4 text-white hover:bg-red-900 transition-colors duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="mr-4 text-xl">
-              {isLoading ? <FiLoader className="animate-spin" /> : <FiLogOut size={20} />}
+              {isLogoutLoading ? <FiLoader className="animate-spin" /> : <FiLogOut size={20} />}
             </span>
             <span className="font-medium">
-              {isLoading ? 'Logging out...' : 'Log Out'}
+              {isLogoutLoading ? 'Logging out...' : 'Log Out'}
             </span>
           </button>
         </div>

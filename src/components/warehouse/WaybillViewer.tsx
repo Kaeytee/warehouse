@@ -39,7 +39,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
   // ========================================
 
   // Authentication state
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
 
   // Waybill data state
   const [waybill, setWaybill] = useState<WaybillData | null>(null);
@@ -58,10 +58,10 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
    * Automatically generates if autoGenerate is true
    */
   useEffect(() => {
-    if (autoGenerate && userId) {
+    if (autoGenerate && user?.id) {
       handleGenerateWaybill();
     }
-  }, [shipmentId, userId, autoGenerate]);
+  }, [shipmentId, user?.id, autoGenerate]);
 
   // ========================================
   // EVENT HANDLERS
@@ -72,7 +72,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
    * Calls backend service to create waybill document
    */
   const handleGenerateWaybill = async (): Promise<void> => {
-    if (!userId) {
+    if (!user?.id) {
       setError('User not authenticated');
       return;
     }
@@ -84,7 +84,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
       // Generate waybill via service
       const generatedWaybill = await warehouseDocumentService.generateWaybill(
         shipmentId,
-        userId
+        user.id
       );
 
       setWaybill(generatedWaybill);

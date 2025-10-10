@@ -37,7 +37,7 @@ interface PackageFormData {
 }
 
 const PackageIntake: React.FC = () => {
-  const { isAuthenticated, userId } = useWarehouseAuth();
+  const { isAuthenticated, user } = useWarehouseAuth();
   
   // Form state
   const [formData, setFormData] = useState<PackageFormData>({
@@ -146,7 +146,7 @@ const PackageIntake: React.FC = () => {
       return;
     }
 
-    if (!isAuthenticated || !userId) {
+    if (!isAuthenticated || !user?.id) {
       setSubmitError('User authentication required');
       return;
     }
@@ -159,7 +159,7 @@ const PackageIntake: React.FC = () => {
       const { data, error } = await supabase.rpc('warehouse_package_intake', {
         p_user_suite_number: formData.suiteNumber.trim().toUpperCase(),
         p_description: formData.description.trim(),
-        p_warehouse_staff_id: userId,
+        p_warehouse_staff_id: user.id,
         p_weight: formData.weight ? parseFloat(formData.weight) : null,
         p_declared_value: null,
         p_store_name: formData.storeName.trim() || null,

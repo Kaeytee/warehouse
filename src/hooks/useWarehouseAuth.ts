@@ -194,5 +194,6 @@ export const useWarehouseAuth = () => {
     signIn,
     signOut,
     hasRole: (role: string) => authState.user?.role === role,
+    displayName: authState.user?.displayName || '',
   };
 };

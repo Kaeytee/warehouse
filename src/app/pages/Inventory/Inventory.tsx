@@ -48,7 +48,7 @@ import type { ReceiptData } from '../../../services/warehouseDocumentService';
  */
 const PackageManagement: React.FC = () => {
   // Authentication and user context
-  const { isAuthenticated, userId } = useWarehouseAuth();
+  const { isAuthenticated, user } = useWarehouseAuth();
   
   // State management for package data and UI
   const [packages, setPackages] = useState<any[]>([]);
@@ -213,7 +213,7 @@ const PackageManagement: React.FC = () => {
   const handleBulkStatusUpdate = async (status: string) => {
     try {
       // Check user authentication
-      if (!isAuthenticated || !userId) {
+      if (!isAuthenticated || !user?.id) {
         setError('User authentication required');
         return;
       }

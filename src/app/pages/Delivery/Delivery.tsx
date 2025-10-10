@@ -77,7 +77,7 @@ const Delivery: React.FC = () => {
   // ========================================
 
   // Authentication
-  const { isAuthenticated, userId } = useWarehouseAuth();
+  const { isAuthenticated, user } = useWarehouseAuth();
 
   // Shipments data
   const [arrivedShipments, setArrivedShipments] = useState<ArrivedShipment[]>([]);
@@ -220,11 +220,11 @@ const Delivery: React.FC = () => {
    * Load data on mount
    */
   useEffect(() => {
-    if (isAuthenticated && userId) {
+    if (isAuthenticated && user?.id) {
       fetchArrivedShipments();
       fetchPackagesAwaitingPickup();
     }
-  }, [isAuthenticated, userId]);
+  }, [isAuthenticated, user?.id]);
 
   /**
    * Refresh all data
@@ -591,7 +591,7 @@ const Delivery: React.FC = () => {
    * Handle verification submission
    */
   const handleVerifyPickupCode = async (): Promise<void> => {
-    if (!verificationData || !userId) return;
+    if (!verificationData || !user?.id) return;
 
     setIsVerifying(true);
     setVerificationError('');
@@ -603,7 +603,7 @@ const Delivery: React.FC = () => {
         p_package_id: verificationData.packageId,
         p_suite_number: verificationData.suiteNumber.trim().toUpperCase(),
         p_auth_code: verificationCode.trim(),
-        p_staff_id: userId
+        p_staff_id: user.id
       });
 
       if (error) throw error;

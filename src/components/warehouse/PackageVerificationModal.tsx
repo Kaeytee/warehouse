@@ -40,7 +40,7 @@ export const PackageVerificationModal: React.FC<PackageVerificationModalProps> =
   // ========================================
 
   // Authentication state
-  const { userId } = useWarehouseAuth();
+  const { user } = useWarehouseAuth();
 
   // Form state
   const [suiteNumber, setSuiteNumber] = useState<string>('');
@@ -73,7 +73,7 @@ export const PackageVerificationModal: React.FC<PackageVerificationModalProps> =
       return;
     }
 
-    if (!userId) {
+    if (!user?.id) {
       setError('User not authenticated');
       return;
     }
@@ -89,7 +89,7 @@ export const PackageVerificationModal: React.FC<PackageVerificationModalProps> =
         package_id: packageId,
         suite_number: suiteNumber.trim().toUpperCase(),
         auth_code: authCode.trim(),
-        staff_id: userId
+        staff_id: user.id
       };
 
       // Call verification service
