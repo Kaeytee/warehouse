@@ -387,14 +387,61 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
   - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Removed verification modal, set arrived → null status flow
   - `sql/85_add_delivery_notification.sql` - Added notification creation to verify_delivery_code() function
 
-## Authentication & Test Credentials
+## Authentication & Access Control
 
-The warehouse system uses role-based access control (RBAC) with three user roles and mock authentication for testing purposes.
+### 🔐 Database Role-Based Authentication (Updated 2025-10-10)
+
+The warehouse system uses **database-driven role-based access control (RBAC)** where user roles are stored in and fetched from the database. Authentication is handled by Supabase Auth with role validation on login.
+
+#### **Authorized Roles for Warehouse Access**
+
+Only users with the following roles in the database can access the warehouse system:
+- ✅ **Super Administrator** (`superadmin` or `super_admin`)
+- ✅ **Administrator** (`admin`)
+- ✅ **Warehouse Administrator** (`warehouse_admin`)
+- ❌ **Client** (`client`) - No warehouse access
+
+#### **How It Works**
+
+1. **Login**: User enters email and password
+2. **Authentication**: Supabase validates credentials
+3. **Role Check**: System fetches user's role from `users` table
+4. **Authorization**: Access granted only if role is `superadmin`, `admin`, or `warehouse_admin`
+5. **Status Check**: User must have `status = 'active'` in database
+
+#### **Key Changes from Previous System**
+
+❌ **Old System**: Email pattern-based role determination
+```typescript
+// OLD: Determined role from email patterns
+if (email.includes('admin@')) return 'admin';
+if (email.includes('warehouse@')) return 'warehouse_admin';
+```
+
+✅ **New System**: Database role field validation
+```typescript
+// NEW: Fetches role from database
+const { data } = await supabase
+  .from('users')
+  .select('role, status')
+  .eq('id', userId)
+  .single();
+  
+// Only allow if role is authorized and status is active
+if (isAuthorizedRole(data.role) && data.status === 'active') {
+  // Grant access
+}
+```
+
+#### **Implementation Files**
+- **Service**: `src/services/warehouseAuthService.ts` - Role fetching and validation
+- **Login**: `src/app/login.tsx` - Login page with database role check
+- **Hook**: `src/hooks/useWarehouseAuth.ts` - Authentication state management
 
 ### Login Format
 
-- **Employee ID**: 10-digit number
-- **Password**: 6-character string
+- **Email**: User's registered email address
+- **Password**: User's password
 
 ### Database Deployment
 
@@ -436,29 +483,45 @@ The warehouse system uses role-based access control (RBAC) with three user roles
 - Email notification system requires manual setup
 - Tables will be created when email feature is implemented
 
-## Test Credentials
+## User Management
 
-### Administrator Access
-- **Employee ID**: `7890123456` | **Password**: `mgr001`
-- **Employee ID**: `2345678901` | **Password**: `work02`
-- **Employee ID**: `3456789012` | **Password**: `work03`
+### Creating Warehouse Users
 
-**Permissions**: Dashboard, Incoming Requests, Shipment History, Inventory
+Users with warehouse access must be created with appropriate roles in the database:
 
-- **Employee ID**: `4567890123` | **Password**: `inv001`
-- **Employee ID**: `5678901234` | **Password**: `inv002`
-- **Employee ID**: `6789012345` | **Password**: `inv003`
+```sql
+-- Example: Create a warehouse administrator user
+INSERT INTO public.users (
+  id, email, first_name, last_name, role, status
+) VALUES (
+  'user-uuid-here',
+  'warehouse@vanguardcargo.com',
+  'John',
+  'Doe',
+  'warehouse_admin',
+  'active'
+);
+```
 
-**Permissions**: Dashboard, Shipment History, Analysis Report, Inventory
+### Activating/Deactivating Users
 
-#### Manager Role
+Use the **User Management** page in the warehouse app to:
+- ✅ Activate users: Sets `status = 'active'`
+- ❌ Deactivate users: Sets `status = 'inactive'`
+- 🔒 Suspend users: Sets `status = 'suspended'`
 
-- **Employee ID**: `7890123456` | **Password**: `mgr001`
-- **Employee ID**: `8901234567` | **Password**: `mgr002`
-- **Employee ID**: `9012345678` | **Password**: `mgr003`
-- **Employee ID**: `0123456789` | **Password**: `mgr004`
+Only **active** users with authorized roles can access the warehouse system.
 
-**Permissions**: Full access to all features (Dashboard, Incoming Requests, Create Shipment, Shipment History, Analysis Report, Inventory)
+### Querying Active Users
+
+```typescript
+// Get all active warehouse staff
+const { data } = await supabase
+  .from('users')
+  .select('*')
+  .eq('status', 'active')
+  .in('role', ['superadmin', 'admin', 'warehouse_admin']);
+```
 
 ## Expanding the ESLint configuration
 

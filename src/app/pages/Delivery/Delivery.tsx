@@ -450,7 +450,7 @@ const Delivery: React.FC = () => {
                 <div class="company-info">4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA</div>
                 <div class="company-info">Email: support@vanguardcargo.co | Phone: 0303982320 | +233 544197819</div>
                 
-                <div class="receipt-title">✅ Delivery Confirmation Receipt</div>
+                <div class="receipt-title">Delivery Confirmation Receipt</div>
                 <div class="receipt-number">Receipt #: ${receiptNumber}</div>
                 <div class="company-info">Generated: ${now.toLocaleString('en-US', { 
                   year: 'numeric', 
@@ -541,14 +541,14 @@ const Delivery: React.FC = () => {
                 </div>
                 <div class="info-row">
                   <span class="label">Delivery Status:</span>
-                  <span class="value" style="color: #059669; font-weight: bold;">✅ DELIVERED</span>
+                  <span class="value" style="color: #059669; font-weight: bold;">DELIVERED</span>
                 </div>
               </div>
 
               <!-- Delivery Confirmation Stamp -->
               <div class="delivery-stamp">
                 <div class="stamp-title">Package Successfully Delivered</div>
-                <div class="stamp-content">✅ VERIFIED & RELEASED</div>
+                <div class="stamp-content">VERIFIED & RELEASED</div>
                 <div class="stamp-note">Delivery code verified by warehouse staff</div>
                 <div class="stamp-note" style="margin-top: 0.5em; font-size: 0.85em;">
                   Delivered to: ${packageData.customerName} (Suite ${packageData.suiteNumber})

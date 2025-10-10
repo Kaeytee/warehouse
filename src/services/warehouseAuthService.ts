@@ -66,63 +66,81 @@ export interface StaffAssignment {
 }
 
 /**
- * Meta-level RBAC: Email-based role determination for warehouse access
- * Inspired by Meta's internal auth patterns - deterministic role assignment
+ * Database-driven RBAC: Role-based authentication for warehouse access
+ * Uses actual database role field instead of email patterns
  */
 export class WarehouseAuthService {
   /**
-   * Determine user role based on email pattern (Meta-style)
-   * @param email - User email address
-   * @returns Role string or 'unauthorized'
+   * Fetch user role from database
+   * @param userId - User UUID from auth
+   * @returns Promise with role string or 'unauthorized'
    */
-  static determineUserRole(email: string): string {
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Superadmin patterns
-    if (normalizedEmail.includes('superadmin@') || 
-        normalizedEmail.includes('super@') ||
-        normalizedEmail === 'admin@vanguardcargo.org') {
-      return 'superadmin';
+  static async fetchUserRole(userId: string): Promise<string> {
+    try {
+      // Import supabase dynamically to avoid circular dependency
+      const { supabase } = await import('../lib/supabase');
+      
+      // Fetch user's role from database
+      const { data, error } = await supabase
+        .from('users')
+        .select('role, status')
+        .eq('id', userId)
+        .single();
+      
+      // If error or user not found, unauthorized
+      if (error || !data) {
+        console.error('Error fetching user role:', error);
+        return 'unauthorized';
+      }
+      
+      // Check if user is active
+      if (data.status !== 'active') {
+        console.warn(`User ${userId} is not active (status: ${data.status})`);
+        return 'unauthorized';
+      }
+      
+      // Return the database role
+      return data.role || 'unauthorized';
+    } catch (error) {
+      console.error('Exception fetching user role:', error);
+      return 'unauthorized';
     }
-    
-    // Admin patterns  
-    if (normalizedEmail.includes('admin@') || 
-        normalizedEmail.includes('manager@') ||
-        normalizedEmail.includes('lead@')) {
-      return 'admin';
-    }
-    
-    // Warehouse admin patterns
-    if (normalizedEmail.includes('warehouse@') || 
-        normalizedEmail.includes('wh@') ||
-        normalizedEmail.includes('ops@')) {
-      return 'warehouse_admin';
-    }
-    
-    // All other emails are unauthorized for warehouse access
-    return 'unauthorized';
   }
 
   /**
    * Check if role is authorized for warehouse access
-   * @param role - User role
+   * Accepts: superadmin, admin, warehouse_admin
+   * @param role - User role from database
    * @returns Boolean authorization status
    */
   static isAuthorizedRole(role: string): boolean {
-    return ['warehouse_admin', 'admin', 'superadmin'].includes(role);
+    // Normalize role to handle variations (super_admin vs superadmin)
+    const normalizedRole = role.toLowerCase().trim();
+    return [
+      'warehouse_admin', 
+      'admin', 
+      'superadmin', 
+      'super_admin'
+    ].includes(normalizedRole);
   }
 
   /**
    * Get role display name for UI
-   * @param role - User role
+   * @param role - User role from database
    * @returns Display name
    */
   static getRoleDisplayName(role: string): string {
-    switch (role) {
-      case 'superadmin': return 'Super Administrator';
-      case 'admin': return 'Administrator';
-      case 'warehouse_admin': return 'Warehouse Administrator';
-      default: return 'Unauthorized';
+    const normalizedRole = role.toLowerCase().trim();
+    switch (normalizedRole) {
+      case 'superadmin':
+      case 'super_admin':
+        return 'Super Administrator';
+      case 'admin':
+        return 'Administrator';
+      case 'warehouse_admin':
+        return 'Warehouse Administrator';
+      default:
+        return 'Unauthorized';
     }
   }
 }

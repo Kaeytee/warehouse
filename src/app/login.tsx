@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import image from '../assets/logo.png';
 
 /**
- * Meta-Level Login Component - Email Pattern Based Authentication
+ * Warehouse Login Component - Database Role-Based Authentication
  */
 const Login = () => {
   const { isAuthenticated, isLoading: authLoading } = useWarehouseAuth();
@@ -58,13 +58,6 @@ const Login = () => {
       return;
     }
     
-    // Pre-validate email pattern (Meta-style)
-    const role = WarehouseAuthService.determineUserRole(email);
-    if (!WarehouseAuthService.isAuthorizedRole(role)) {
-      setLocalError('🚫 Access Denied');
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
@@ -89,13 +82,40 @@ const Login = () => {
           p_error_message: error.message
         });
         
-        setLocalError('🚫 Access Denied');
+        setLocalError('🚫 Access Denied: Invalid credentials');
         setIsLoading(false);
         return;
       }
       
       if (!data.user) {
-        setLocalError('🚫 Access Denied');
+        setLocalError('🚫 Access Denied: No user data');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Fetch user role from database
+      const role = await WarehouseAuthService.fetchUserRole(data.user.id);
+      
+      // Check if user has authorized role
+      if (!WarehouseAuthService.isAuthorizedRole(role)) {
+        // Sign out unauthorized user
+        await supabase.auth.signOut();
+        
+        // Log unauthorized access attempt
+        await supabase.rpc('log_auth_event', {
+          p_event_type: 'login_failed',
+          p_user_id: data.user.id,
+          p_user_email: email.trim().toLowerCase(),
+          p_user_role: role,
+          p_session_id: null,
+          p_ip_address: null,
+          p_user_agent: navigator.userAgent,
+          p_status: 'failure',
+          p_details: null,
+          p_error_message: 'Unauthorized role for warehouse access'
+        });
+        
+        setLocalError('🚫 Access Denied: Insufficient permissions');
         setIsLoading(false);
         return;
       }
@@ -123,7 +143,7 @@ const Login = () => {
       // Success! The useWarehouseAuth hook will handle the rest
       
     } catch (err) {
-      setLocalError('🚫 Access Denied');
+      setLocalError('🚫 Access Denied: Authentication failed');
       setIsLoading(false);
     }
   };
@@ -182,11 +202,7 @@ const Login = () => {
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold text-gray-700 mb-4">Vanguard Cargo</h1>
               <p className="text-gray-400 text-lg font-medium">Warehouse Management System</p>
-              <div className="mt-2 text-xs text-gray-500">
-                <p>✅ admin@vanguardcargo.org (superadmin)</p>
-                <p>✅ admin@*, manager@*, warehouse@* (authorized)</p>
-                <p>❌ client emails (unauthorized)</p>
-              </div>
+              
             </div>
 
             {/* Login Form */}

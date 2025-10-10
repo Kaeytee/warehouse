@@ -1,7 +1,7 @@
 /**
- * Meta-Level Warehouse Authentication Hook
- * Provides real-time session monitoring with immediate unauthorized user ejection
- * Inspired by Meta's internal auth patterns - deterministic role assignment
+ * Warehouse Authentication Hook
+ * Provides real-time session monitoring with database role-based access control
+ * Fetches user role from database instead of email patterns
  * 
  * SINGLETON PATTERN: Only one instance manages auth state to prevent duplicate logs
  */
@@ -56,9 +56,11 @@ const validateAndSetGlobalAuth = async (user: any, navigate: any) => {
   }
 
   const email = user.email || '';
-  const role = WarehouseAuthService.determineUserRole(email);
+  
+  // Fetch role from database instead of email pattern
+  const role = await WarehouseAuthService.fetchUserRole(user.id);
 
-  // Meta-style: Immediate ejection of unauthorized users
+  // Database-driven: Immediate ejection of unauthorized users
   if (!WarehouseAuthService.isAuthorizedRole(role)) {
     
     // Force logout
@@ -67,13 +69,15 @@ const validateAndSetGlobalAuth = async (user: any, navigate: any) => {
     // Show access denied message
     toast({
       title: "🚫 Access Denied",
-      description: "Access Denied",
+      description: "You do not have permission to access the warehouse system",
       variant: "destructive",
       duration: 6000,
     });
     
-    // Redirect to login
-    navigate('/login', { replace: true });
+    // Redirect to login if navigate function provided
+    if (navigate) {
+      navigate('/login', { replace: true });
+    }
     
     updateGlobalAuthState({ 
       isAuthenticated: false, 
