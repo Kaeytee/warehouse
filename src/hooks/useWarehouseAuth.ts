@@ -27,43 +27,6 @@ const initialAuthState: AuthState = {
 let authCache: { userId: string; role: string; timestamp: number } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-async function recoverSession(): Promise<boolean> {
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-
-    if (error || !session?.user) {
-      logger.info('No valid session found');
-      return false;
-    }
-
-    logger.info('Valid session found');
-    return true;
-  } catch (error) {
-    logger.error('Session recovery error:', error);
-    return false;
-  }
-}
-
-async function getCachedUserRole(userId: string): Promise<string> {
-  // Check cache first
-  if (authCache && authCache.userId === userId && Date.now() - authCache.timestamp < CACHE_DURATION) {
-    logger.info('Using cached user role');
-    return authCache.role;
-  }
-
-  // Fetch from database
-  const role = await WarehouseAuthService.fetchUserRole(userId);
-
-  // Update cache
-  authCache = {
-    userId,
-    role,
-    timestamp: Date.now()
-  };
-
-  return role;
-}
-
 export const useWarehouseAuth = () => {
   const [authState, setAuthState] = useState<AuthState>(initialAuthState);
   const navigate = useNavigate();
@@ -72,6 +35,44 @@ export const useWarehouseAuth = () => {
   const updateAuthState = useCallback((updates: Partial<AuthState>) => {
     setAuthState(prev => ({ ...prev, ...updates }));
   }, []);
+
+  // Move functions inside the component to ensure proper scoping
+  async function recoverSession(): Promise<boolean> {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error || !session?.user) {
+        logger.info('No valid session found');
+        return false;
+      }
+
+      logger.info('Valid session found');
+      return true;
+    } catch (error) {
+      logger.error('Session recovery error:', error);
+      return false;
+    }
+  }
+
+  async function getCachedUserRole(userId: string): Promise<string> {
+    // Check cache first
+    if (authCache && authCache.userId === userId && Date.now() - authCache.timestamp < CACHE_DURATION) {
+      logger.info('Using cached user role');
+      return authCache.role;
+    }
+
+    // Fetch from database
+    const role = await WarehouseAuthService.fetchUserRole(userId);
+
+    // Update cache
+    authCache = {
+      userId,
+      role,
+      timestamp: Date.now()
+    };
+
+    return role;
+  }
 
   const signIn = async (email: string, password: string) => {
     updateAuthState({ isLoading: true, error: null });
