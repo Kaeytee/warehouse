@@ -1,5 +1,12 @@
 # Vanguard Cargo - Warehouse Management System
 
+**Complete warehouse operations management system with role-based access control**
+
+## 📚 Documentation
+
+- **[USER_MANUAL.md](./USER_MANUAL.md)** - Comprehensive user guide for all system features
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Deployment and configuration instructions
+
 ## Overview
 
 Vanguard Cargo is a warehouse-to-warehouse international cargo platform that enables customers to ship packages from foreign countries to local warehouses for pickup. The warehouse system is the operational core that manages package processing, international shipping, and customer pickup coordination.

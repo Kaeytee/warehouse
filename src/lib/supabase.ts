@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '../config/environment';
+import type { Database } from '../types/database.types';
 
 const authStorage = {
   getItem: (key: string) => {
@@ -54,7 +55,7 @@ const authStorage = {
 };
 
 // Create a singleton Supabase client to avoid multiple instances
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 export const supabase = (() => {
   if (!supabaseInstance) {
@@ -65,11 +66,19 @@ export const supabase = (() => {
       throw new Error('Missing Supabase environment variables');
     }
 
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         storage: authStorage,
         autoRefreshToken: true,
         detectSessionInUrl: false
+      },
+      db: {
+        schema: 'public'
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'vanguard-warehouse'
+        }
       }
     });
 
