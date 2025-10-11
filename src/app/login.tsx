@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWarehouseAuth } from '../hooks/useWarehouseAuth';
+import { useNavigate } from 'react-router-dom';
 import { BsPerson, BsLock } from 'react-icons/bs';
 import image from '../assets/logo.png';
   
@@ -7,13 +8,20 @@ import image from '../assets/logo.png';
  * Warehouse Login Component - Database Role-Based Authentication
  */
 const Login = () => {
-  const { isAuthenticated, signIn } = useWarehouseAuth();
+  const { signIn, isAuthenticated } = useWarehouseAuth();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+
+  // Watch for authentication changes and redirect to dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // Remove manual redirect - let useWarehouseAuth handle it
   // useEffect(() => {
@@ -25,42 +33,17 @@ const Login = () => {
   //   }
   // }, [isAuthenticated, navigate]);
 
-  // Show loading state when login button is clicked
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Success Modal
-  if (showSuccessModal) {
-    // Auto-close modal after 2 seconds
-    setTimeout(() => {
-      setShowSuccessModal(false);
-    }, 2000);
-
-    return (
-      <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center p-4 bg-black bg-opacity-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Login Successful!</h3>
-            <p className="text-sm text-gray-500 mb-6">Welcome back! Redirecting to your dashboard...</p>
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Remove the loading screen - go straight to dashboard if authenticated
+  // if (isAuthenticated && !authLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Authenticating...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,22 +54,23 @@ const Login = () => {
       return;
     }
 
-    setIsLoading(true);
+    setFormLoading(true);
 
     try {
       // Use the signIn function from useWarehouseAuth hook
       const result = await signIn(email.trim().toLowerCase(), password);
 
       if (result.success) {
-        setShowSuccessModal(true);
-        // Modal will auto-close and redirect via useWarehouseAuth
+        // Success! The authentication state has been updated
+        // LoginRoute will detect the change and redirect to dashboard
+        return { success: true };
       } else {
         setLocalError(result.error || 'Login failed');
       }
     } catch (err) {
       setLocalError('🚫 Access Denied: Authentication failed');
     } finally {
-      setIsLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -196,10 +180,10 @@ const Login = () => {
               {/* Login Button with Loading State */}
               <button
                 type="submit"
-                disabled={isLoading || !email || !password}
-                className={`w-full bg-red-700 text-white py-4 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg flex items-center justify-center ${isLoading ? 'opacity-90 cursor-not-allowed' : 'hover:bg-red-800 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]'}`}
+                disabled={formLoading || !email || !password}
+                className={`w-full bg-red-700 text-white py-4 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg flex items-center justify-center ${formLoading ? 'opacity-90 cursor-not-allowed' : 'hover:bg-red-800 hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]'}`}
               >
-                {isLoading ? (
+                {formLoading ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

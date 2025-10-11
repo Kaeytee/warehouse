@@ -1,5 +1,6 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useWarehouseAuth } from './hooks/useWarehouseAuth';
 // import { useEmailNotificationProcessor } from './hooks/useEmailNotificationProcessor'; // Disabled until email tables created
@@ -19,52 +20,13 @@ import UserManagement from './app/pages/UserManagement/UserManagement';
 import Reports from './app/pages/Reports/Reports';
 import RouteGuard from './components/RouteGuard';
 import UnauthorizedPage from './components/UnauthorizedPage';
-// import GroupManagementDashboard from './app/pages/GroupManagement/GroupManagementDashboard'; // Removed from routing
 
-/**
- * Login Route Component
- * 
- * Redirects authenticated users to dashboard, otherwise shows login page
- */
-const LoginRoute = (): React.ReactElement => {
-  const { isAuthenticated, isLoading } = useWarehouseAuth();
+const LoginRoute = () => {
+  const auth = useWarehouseAuth();
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  if (auth.isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Authenticating...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to dashboard when authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <Login />;
-};
-
-/**
- * Protected Route Component
- * 
- * This component handles protected routes that require authentication.
- * It checks if the user is authenticated and redirects to login if not.
- */
-
-const ProtectedRoute = (): React.ReactElement => {
-  const { isAuthenticated, isLoading } = useWarehouseAuth();
-  const location = useLocation();
-
-  // Show loading only if we're actually checking authentication
-  // This prevents flickering when auth state changes
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -73,17 +35,38 @@ const ProtectedRoute = (): React.ReactElement => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (auth.isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return <AppLayout />;
+  return <Login />;
+};
+
+const ProtectedRoute = () => {
+  const auth = useWarehouseAuth();
+
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (auth.isAuthenticated) {
+    return <AppLayout />;
+  }
+
+  return <Navigate to="/login" replace />;
 };
 
 /**
  * App Routes Component
  * 
- * Contains all the routing logic with role-based protection
+{{ ... }}
  */
 const AppRoutes: React.FC = () => {
   return (
@@ -91,17 +74,17 @@ const AppRoutes: React.FC = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
-      
+
       {/* Protected Routes - All wrapped in AppLayout */}
       <Route element={<ProtectedRoute />}>
         {/* Dashboard - Accessible by all warehouse roles */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <RouteGuard requiredPermission="analytics_view">
               <Dashboard />
             </RouteGuard>
-          } 
+          }
         />
         
         {/* Package Intake - All warehouse roles */}
@@ -191,21 +174,19 @@ const AppRoutes: React.FC = () => {
         <Route path="/shipment-history" element={<Navigate to="/shipments" replace />} />
         <Route path="/analysis-report" element={<Navigate to="/analytics" replace />} />
         <Route path="/client-management" element={<Navigate to="/users" replace />} />
-        
         {/* About page - Public within authenticated area */}
         <Route path="/about" element={<About />} />
       </Route>
-      
       {/* Index route - redirect based on authentication */}
-      <Route 
-        path="/" 
-        element={<Navigate to="/dashboard" replace />} 
+      <Route
+        path="/"
+        element={<Navigate to="/dashboard" replace />}
       />
-      
+
       {/* Catch-all route - redirect to unauthorized for unknown paths */}
-      <Route 
-        path="*" 
-        element={<Navigate to="/unauthorized" replace />} 
+      <Route
+        path="*"
+        element={<Navigate to="/unauthorized" replace />}
       />
     </Routes>
   );
@@ -223,10 +204,6 @@ const App = (): React.ReactElement => {
 
   // Effect to check authentication status on app load
   useEffect(() => {
-    // Initialize any global settings or analytics here
-    console.log('Vanguard Cargo Warehouse App - Role-Based Access Control Enabled');
-    console.log('⚠️ Email Notification System: DISABLED (tables not created)');
-
     // Initialize token monitoring for robust session management
     const { data: { subscription } } = setupTokenMonitor();
 

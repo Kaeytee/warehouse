@@ -29,8 +29,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   const { isAuthenticated, user, isLoading } = useWarehouseAuth();
   const location = useLocation();
 
-  // Only show loading if we're actually initializing auth
-  // This prevents flickering during normal auth state changes
+  // Show loading if we're initializing auth
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -42,7 +41,7 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
     );
   }
 
-  // Redirect to login only after we know auth state and user is not authenticated
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

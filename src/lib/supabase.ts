@@ -53,16 +53,31 @@ const authStorage = {
   }
 };
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Create a singleton Supabase client to avoid multiple instances
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: authStorage,
-    autoRefreshToken: true,
-    detectSessionInUrl: false
+export const supabase = (() => {
+  if (!supabaseInstance) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Missing Supabase environment variables');
+    }
+
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: authStorage,
+        autoRefreshToken: true,
+        detectSessionInUrl: false
+      }
+    });
+
+    console.log('Supabase client initialized');
   }
-});
+
+  return supabaseInstance;
+})();
 
 export function setupTokenMonitor() {
   return supabase.auth.onAuthStateChange((event, session) => {
