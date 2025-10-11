@@ -11,8 +11,16 @@ import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
  */
 const AppNavbar: React.FC = () => {
   // Get user information from warehouse auth
-  const { displayName } = useWarehouseAuth();
-  
+  const { displayName, user } = useWarehouseAuth();
+
+  // Get role display name
+  const roleDisplayName = user?.role ? (
+    user.role.toLowerCase() === 'superadmin' || user.role.toLowerCase() === 'super_admin' ? 'Super Administrator' :
+    user.role.toLowerCase() === 'admin' ? 'Administrator' :
+    user.role.toLowerCase() === 'warehouse_admin' ? 'Warehouse Administrator' :
+    'User'
+  ) : 'User';
+
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm z-30">
       <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -24,10 +32,10 @@ const AppNavbar: React.FC = () => {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-800">
-                Welcome, {displayName || 'Admin'}
+                Welcome, {displayName || 'User'}
               </p>
               <p className="text-xs text-gray-500">
-                Administrator
+                {roleDisplayName}
               </p>
             </div>
           </div>

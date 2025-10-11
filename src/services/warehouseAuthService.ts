@@ -1,69 +1,66 @@
-/**
- * Warehouse Authentication Service
- * 
- * Handles authentication for warehouse staff using Supabase Auth
- * Replaces the mock authentication system with real database integration
- */
-
-// Inline UserRole and RolePermissions to avoid Fast Refresh error
-export type UserRole = 'admin' | 'super_admin' | 'warehouse_admin' | 'customer';
-export interface RolePermissions {
-  dashboard: boolean;
-  incomingRequests: boolean;
-  createShipment: boolean;
-  shipmentHistory: boolean;
-  staffManagement: boolean;
-  analysisReport: boolean;
-  inventory: boolean;
-}
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  department: string;
-  permissions: RolePermissions;
-  isActive: boolean;
-  status: 'active' | 'inactive' | 'suspended';
-  assignedWarehouses: string[];
-  createdAt: string;
-  lastLogin?: string;
-  token: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  user: User;
-  session: unknown;
-}
-
-export interface WarehouseStaffProfile {
-  id: string;
-  email: string;
-  role: 'admin' | 'super_admin' | 'warehouse_admin';
-  status: 'active' | 'inactive' | 'suspended';
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface StaffAssignment {
-  id: string;
-  user_id: string;
-  warehouse_id: string;
-  position: string;
-  is_active: boolean;
+export interface WarehousePermission {
+  analytics_view: boolean;
+  analytics_report: boolean;
+  package_intake: boolean;
+  package_management: boolean;
+  shipment_creation: boolean;
+  shipment_management: boolean;
+  delivery_management: boolean;
+  reports: boolean;
+  user_management: boolean;
+  settings_management: boolean;
   can_receive_packages: boolean;
   can_ship_packages: boolean;
   can_modify_packages: boolean;
   can_manage_inventory: boolean;
 }
+
+/**
+ * Role-based permissions mapping for warehouse access control
+ */
+export const ROLE_PERMISSIONS: Record<string, (keyof WarehousePermission)[]> = {
+  superadmin: [
+    'analytics_view',
+    'analytics_report',
+    'package_intake',
+    'package_management',
+    'shipment_creation',
+    'shipment_management',
+    'delivery_management',
+    'reports',
+    'user_management',
+    'settings_management',
+    'can_receive_packages',
+    'can_ship_packages',
+    'can_modify_packages',
+    'can_manage_inventory'
+  ],
+  admin: [
+    'analytics_view',
+    'analytics_report',
+    'package_intake',
+    'package_management',
+    'shipment_creation',
+    'shipment_management',
+    'delivery_management',
+    'reports',
+    'can_receive_packages',
+    'can_ship_packages',
+    'can_modify_packages',
+    'can_manage_inventory'
+  ],
+  warehouse_admin: [
+    'analytics_view',
+    'package_intake',
+    'package_management',
+    'shipment_creation',
+    'delivery_management',
+    'can_receive_packages',
+    'can_ship_packages',
+    'can_modify_packages',
+    'can_manage_inventory'
+  ]
+};
 
 /**
  * Database-driven RBAC: Role-based authentication for warehouse access
@@ -75,7 +72,7 @@ export class WarehouseAuthService {
    * @param userId - User UUID from auth
    * @returns Promise with role string or 'unauthorized'
    */
-  static async fetchUserRole(userId: string): Promise<string> {
+  static async fetchUserRole(userId: string): Promise<{ role: string; firstName?: string; lastName?: string }> {
     try {
       // Import supabase dynamically to avoid circular dependency
       const { supabase } = await import('../lib/supabase');
@@ -85,10 +82,10 @@ export class WarehouseAuthService {
         setTimeout(() => reject(new Error('Database query timeout')), 3000);
       });
 
-      // Fetch user's role from database with timeout
+      // Fetch user's role and name from database with timeout
       const queryPromise = supabase
         .from('users')
-        .select('role, status')
+        .select('role, status, first_name, last_name')
         .eq('id', userId)
         .single();
 
@@ -97,20 +94,24 @@ export class WarehouseAuthService {
       // If error or user not found, unauthorized
       if (error || !data) {
         console.error('Error fetching user role:', error);
-        return 'unauthorized';
+        return { role: 'unauthorized' };
       }
 
       // Check if user is active
       if (data.status !== 'active') {
         console.warn(`User ${userId} is not active (status: ${data.status})`);
-        return 'unauthorized';
+        return { role: 'unauthorized' };
       }
 
-      // Return the database role
-      return data.role || 'unauthorized';
+      // Return the database role and name data
+      return {
+        role: data.role || 'unauthorized',
+        firstName: data.first_name,
+        lastName: data.last_name
+      };
     } catch (error) {
       console.error('Exception fetching user role:', error);
-      return 'unauthorized';
+      return { role: 'unauthorized' };
     }
   }
 
@@ -124,31 +125,31 @@ export class WarehouseAuthService {
     // Normalize role to handle variations (super_admin vs superadmin)
     const normalizedRole = role.toLowerCase().trim();
     return [
-      'warehouse_admin', 
-      'admin', 
-      'superadmin', 
+      'warehouse_admin',
+      'admin',
+      'superadmin',
       'super_admin'
     ].includes(normalizedRole);
   }
 
   /**
-   * Get role display name for UI
-   * @param role - User role from database
-   * @returns Display name
+   * Get user's display name from their first and last name
+   * @param firstName - User's first name
+   * @param lastName - User's last name
+   * @returns Formatted display name
    */
-  static getRoleDisplayName(role: string): string {
-    const normalizedRole = role.toLowerCase().trim();
-    switch (normalizedRole) {
-      case 'superadmin':
-      case 'super_admin':
-        return 'Super Administrator';
-      case 'admin':
-        return 'Administrator';
-      case 'warehouse_admin':
-        return 'Warehouse Administrator';
-      default:
-        return 'Unauthorized';
+  static getUserDisplayName(firstName?: string, lastName?: string): string {
+    // Use first and last name if available
+    if (firstName && lastName) {
+      return `${firstName.trim()} ${lastName.trim()}`;
     }
+
+    if (firstName) {
+      return firstName.trim();
+    }
+
+    // Fallback to role display name
+    return 'User';
   }
 }
 

@@ -1,48 +1,31 @@
-import { useState, useEffect } from 'react';
-import { BsPerson, BsLock } from 'react-icons/bs';
+import { useState } from 'react';
 import { useWarehouseAuth } from '../hooks/useWarehouseAuth';
-import { WarehouseAuthService } from '../services/warehouseAuthService';
-import { supabase } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { BsPerson, BsLock } from 'react-icons/bs';
 import image from '../assets/logo.png';
-
+  
 /**
  * Warehouse Login Component - Database Role-Based Authentication
  */
 const Login = () => {
-  const { isAuthenticated } = useWarehouseAuth();
-  const navigate = useNavigate();
-  
+  const { isAuthenticated, signIn } = useWarehouseAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Handle redirect when authenticated - with debounce to prevent flickering
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Add a small delay to prevent flickering
-      const timeoutId = setTimeout(() => {
-        navigate('/dashboard', { replace: true });
-      }, 100);
+  // Remove manual redirect - let useWarehouseAuth handle it
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     const timeoutId = setTimeout(() => {
+  //       navigate('/dashboard', { replace: true });
+  //     }, 100);
+  //     return () => clearTimeout(timeoutId);
+  //   }
+  // }, [isAuthenticated, navigate]);
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [isAuthenticated, navigate]);
-
-  // Remove loading state - let the component render immediately
-  // if (authLoading) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-  //         <p className="text-gray-600">Checking authentication...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // Don't render login form if already authenticated (hook will redirect)
+  // Show loading state when login button is clicked
   if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -54,101 +37,55 @@ const Login = () => {
     );
   }
 
+  // Success Modal
+  if (showSuccessModal) {
+    // Auto-close modal after 2 seconds
+    setTimeout(() => {
+      setShowSuccessModal(false);
+    }, 2000);
+
+    return (
+      <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Login Successful!</h3>
+            <p className="text-sm text-gray-500 mb-6">Welcome back! Redirecting to your dashboard...</p>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLocalError('');
-    
+
     if (!email || !password) {
       setLocalError('Please enter both email and password');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Attempt Supabase authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      
-      if (error) {
-        // Log failed login attempt
-        await supabase.rpc('log_auth_event', {
-          p_event_type: 'login_failed',
-          p_user_id: null,
-          p_user_email: email.trim().toLowerCase(),
-          p_user_role: null,
-          p_session_id: null,
-          p_ip_address: null,
-          p_user_agent: navigator.userAgent,
-          p_status: 'failure',
-          p_details: null,
-          p_error_message: error.message
-        });
-        
-        setLocalError('🚫 Access Denied: Invalid credentials');
-        setIsLoading(false);
-        return;
+      // Use the signIn function from useWarehouseAuth hook
+      const result = await signIn(email.trim().toLowerCase(), password);
+
+      if (result.success) {
+        setShowSuccessModal(true);
+        // Modal will auto-close and redirect via useWarehouseAuth
+      } else {
+        setLocalError(result.error || 'Login failed');
       }
-      
-      if (!data.user) {
-        setLocalError('🚫 Access Denied: No user data');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Fetch user role from database
-      const role = await WarehouseAuthService.fetchUserRole(data.user.id);
-      
-      // Check if user has authorized role
-      if (!WarehouseAuthService.isAuthorizedRole(role)) {
-        // Sign out unauthorized user
-        await supabase.auth.signOut();
-        
-        // Log unauthorized access attempt
-        await supabase.rpc('log_auth_event', {
-          p_event_type: 'login_failed',
-          p_user_id: data.user.id,
-          p_user_email: email.trim().toLowerCase(),
-          p_user_role: role,
-          p_session_id: null,
-          p_ip_address: null,
-          p_user_agent: navigator.userAgent,
-          p_status: 'failure',
-          p_details: null,
-          p_error_message: 'Unauthorized role for warehouse access'
-        });
-        
-        setLocalError('🚫 Access Denied: Insufficient permissions');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Log successful login
-      await supabase.rpc('log_auth_event', {
-        p_event_type: 'login_success',
-        p_user_id: data.user.id,
-        p_user_email: email.trim().toLowerCase(),
-        p_user_role: role,
-        p_session_id: data.session?.access_token?.substring(0, 20) || null,
-        p_ip_address: null,
-        p_user_agent: navigator.userAgent,
-        p_status: 'success',
-        p_details: null,
-        p_error_message: null
-      });
-      
-      // Update user's last login timestamp
-      await supabase.rpc('update_user_last_login', {
-        p_user_id: data.user.id,
-        p_ip_address: null
-      });
-      
-      // Success! The useWarehouseAuth hook will handle the rest
-      
     } catch (err) {
       setLocalError('🚫 Access Denied: Authentication failed');
+    } finally {
       setIsLoading(false);
     }
   };
