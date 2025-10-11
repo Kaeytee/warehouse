@@ -2,574 +2,281 @@
 
 **Complete warehouse operations management system with role-based access control**
 
-## 📚 Documentation
+---
 
-- **[USER_MANUAL.md](./USER_MANUAL.md)** - Comprehensive user guide for all system features
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Deployment and configuration instructions
+## 📖 User Documentation
+
+**[USER_GUIDE.md](./USER_GUIDE.md)** - Complete user guide for warehouse administrators and staff
+
+This comprehensive guide covers everything warehouse users need to know:
+- ✅ **Getting Started** - First-time login and system overview
+- ✅ **Daily Operations** - Step-by-step workflows for common tasks
+- ✅ **Package Intake** - How to register and process incoming packages
+- ✅ **Shipment Creation** - Creating and managing shipments
+- ✅ **Delivery Management** - Tracking and confirming deliveries
+- ✅ **Inventory Management** - Monitoring warehouse inventory
+- ✅ **Analytics & Reports** - Generating performance reports
+- ✅ **Troubleshooting** - Solutions to common problems
+
+---
 
 ## Overview
 
 Vanguard Cargo is a warehouse-to-warehouse international cargo platform that enables customers to ship packages from foreign countries to local warehouses for pickup. The warehouse system is the operational core that manages package processing, international shipping, and customer pickup coordination.
 
-## Business Model
+### Business Model
 
 **Warehouse-to-Warehouse Pickup Service:**
-
 - Customers submit requests for packages to be collected from foreign warehouses
 - Packages are processed and shipped internationally to local warehouses
 - Customers are notified when packages arrive at the local warehouse
-- Customers visit the local warehouse to collect their packages (no home delivery)
+- Customers visit the local warehouse to collect their packages
 
-## Features
+---
 
-### Core Functionality
-- User authentication (register, login, forgot password)
-- Protected client dashboard for package requests and tracking
-- International shipment creation and tracking
-- Warehouse staff management for package processing
-- Customer notification system for pickup coordination
-- Admin shipment management with barcode generation
-- Responsive layout with sidebar and navbar
+## Key Features
 
-### New Advanced Features (Phase 1)
+### Core Operations
+- 🔐 **Secure Authentication** - Role-based access control
+- 📦 **Package Intake** - Register and track incoming packages
+- 🚚 **Shipment Management** - Create and track shipments
+- 📍 **Delivery Tracking** - Real-time delivery status
+- 📊 **Analytics Dashboard** - Performance insights
+- 👥 **User Management** - Admin controls for staff
+- 🔔 **Notifications** - Automatic customer alerts
+- 📱 **Responsive Design** - Works on all devices
 
-#### 📋 Digital Waybill Generation
-- Automatic waybill generation for all shipments
-- Comprehensive document including sender/receiver details, package inventory, tracking IDs
-- Printable format with barcode and QR code integration
-- Automatic download and print preview capabilities
-- Stored in database for audit trail and reprinting
+### Advanced Features
+- 📋 **Digital Waybill Generation** - Professional shipping documents
+- 📊 **Barcode & QR Codes** - Quick scanning and tracking
+- 🧾 **Receipt Generation** - Package and shipment receipts
+- 🔐 **Delivery Verification** - 6-digit secure pickup codes
+- 📈 **Analytics & Reporting** - Comprehensive performance metrics
+- 🔒 **Role-Based Permissions** - Granular access control
 
-#### 📊 Barcode & QR Code System
-- Automatic barcode generation for all packages and shipments using tracking IDs
-- QR codes linking to public tracking endpoints
-- Multiple format support (CODE128, CODE39, QR)
-- Scannable codes for warehouse operations
-- Printable and downloadable code formats
+---
 
-#### 🧾 Receipt Generation
-- Package intake receipts generated automatically upon package arrival
-- Shipment creation receipts for consolidated shipments
-- Professional receipt layout with VanguardCargo branding
-- Includes: suite number, package details, tracking ID, timestamps, barcode
-- Complete audit trail with receipt history
-- Print and download capabilities
+## User Roles
 
-#### 📥 Download All Documents as ZIP
-- One-click download of all shipment-related documents
-- Automatically bundles waybill and all package receipts into a single ZIP file
-- Professional PDF generation with VanguardCargo branding
-- Smart file naming: `Shipment_<TrackingNumber>_<Date>_Documents.zip`
-- Individual files named clearly: `Waybill_<TrackingNumber>.pdf`, `Package_<PackageID>_Receipt.pdf`
-- Uses jsPDF and html2canvas for high-quality PDF generation
-- Loading state with progress indicator during generation
-- Error handling for individual document failures without stopping the process
+### Super Admin
+Full system access including:
+- ✅ All operational features
+- ✅ User management
+- ✅ System configuration
+- ✅ All reports and analytics
 
-#### 📅 Automatic Estimated Delivery Calculation
-- Automatically calculates estimated delivery date based on service type when creating shipments
-- Service type delivery windows:
-  - **Standard**: 5-7 business days
-  - **Express**: 3-5 business days  
-  - **Overnight**: 1-2 business days
-- Displays calculated delivery date and timeframe in consolidated shipment view
-- No manual date entry required - fully automated
+### Warehouse Admin
+Operations management:
+- ✅ Package intake
+- ✅ Shipment creation
+- ✅ Delivery management
+- ✅ Inventory management
+- ✅ Analytics and reports
 
-#### 📦 Enhanced Consolidation System
-- Packages linked to shipments via `linked_to_shipment_id` field
-- Aggregated metrics: total weight, value, package count
-- Suite number tracking for all packages in shipment
-- Complete traceability from package to shipment
-- Ability to unlink packages from shipments if needed
+### Warehouse Staff
+Daily operations:
+- ✅ Package intake
+- ✅ Shipment creation
+- ✅ Delivery updates
+- ❌ Limited analytics access
+- ❌ No user management
 
-#### 🔐 Delivery Authentication Code System (Updated 2025-10-07)
-- **Auto-generated unique 6-digit codes per customer** when shipment marked as "arrived"
-- **Plain text storage** - customers can view their codes in client app
-- **One code per customer** - all packages from same customer share one code
-- **Secure delivery workflow** - codes cannot be verified from Shipment History page
-- **Mandatory Delivery page verification** - staff must verify code + suite number
-- **Complete audit trail** - all verification attempts logged with staff ID, timestamp, success/failure
-- **One-time use** - codes invalidated after successful delivery
-- See `DELIVERY_AUTH_SYSTEM.md` for complete documentation
+---
 
-#### ✅ Delivery Verification Process
-- Shipments marked "arrived" trigger automatic code generation for all customers
-- Customers retrieve codes via `get_customer_delivery_codes()` in client app
-- Staff uses Delivery page to verify suite number + 6-digit code
-- Package marked "delivered" only after successful verification
-- `arrived → delivered` status transition blocked in Shipment History (must use Delivery page)
-- Complete security logging in `package_verification_log` table
+## Quick Start
 
-### Admin Shipment History UI
-- Barcode column displays scannable PNG barcode for each shipment
-- Professional filter UI with status tabs, live search, and date filtering
-- Animated filter dropdown matching design standards
-- Robust state management with clean OOP code
-- Thoroughly commented for maintainability
+### For Warehouse Users
 
-## Recent UI Changes
+**See [USER_GUIDE.md](./USER_GUIDE.md)** for complete instructions.
 
-- **Dashboard Modernization (2025-10-09)**
-  - Updated dashboard header to match PackageIntake modern gradient banner design
-  - Reorganized dashboard metric cards:
-    - **First Card (Amber)**: Active Shipments - showing shipments in transit & shipped (statuses: processing, in_transit, shipped)
-    - **Second Card (Green)**: Packages Received - showing **TODAY'S** packages with status 'received' (filtered by received_at >= today)
-    - **Third Card (Blue)**: Awaiting Delivery - showing packages ready for customer pickup (status: arrived)
-  - **Database Enhancement**: Added `received_at` timestamp column to packages table
-    - Tracks exact timestamp when package status changes to 'received'
-    - Automatic triggers set/clear `received_at` when status changes to/from 'received'
-    - Backfilled historical data with `created_at` as fallback
-    - Indexed for efficient daily metrics queries
-    - See `sql/96_add_received_at_tracking.sql` for implementation
-  - **Bug Fix**: Fixed package intake case-insensitive suite number lookup
-    - Backend function now uses `UPPER()` comparison instead of exact match
-    - Matches frontend ILIKE behavior for consistent user lookup
-    - Handles whitespace with TRIM()
-    - See `sql/97_fix_package_intake_case_insensitive.sql` for fix
-  - Removed "Processing" card to focus on core warehouse operations
-  - Added `arrivedPackages` metric to DashboardService to track packages with status "arrived"
-  - Updated `receivedPackages` metric to use `received_at` field with fallback to `created_at` for backward compatibility
-  - Streamlined grid layout from 4 columns to 3 columns (responsive: 1 col mobile, 2 col tablet, 3 col desktop)
-  - Integrated refresh button into header banner with professional styling
-  - Cleaned up unused imports and variables (FiClock, FiCalendar, FiMapPin, FiAlertCircle, HiOutlinePaperAirplane, hasRole)
-  - Removed all console.log and console.error statements from:
-    - `src/app/pages/dashboard.tsx`
-    - `src/services/DashboardService.ts`
-  - Production-ready code with clean architecture
-  - Improved visual consistency across all warehouse pages
-- Navbar
-  - Removed the global search bar from `src/components/layout/AppNavbar.tsx`.
-  - Implemented live unread notifications count using Supabase on the `notifications` table with real-time updates.
-    - Uses `TABLES.NOTIFICATIONS`, filters by `user_id`, `is_read = false`.
-    - Subscribes via `subscribeToTable` to refresh count on inserts/updates/deletes.
-- Authentication Loader
-  - Eliminated the full-screen red "Authenticating..." loader by updating `src/components/RouteGuard.tsx`.
-  - The app no longer blocks rendering during auth initialization; redirects happen only after auth state is known.
-- Incoming Requests Page
-  - Fixed a critical crash on the Incoming Requests page (`src/app/pages/IncomingRequest/IncomingRequest.tsx`) caused by multiple errors, including a `ReferenceError`.
-  - Refactored the component to remove mock data and correctly fetch, filter, and display live package data from the `WarehouseService`.
-  - Resolved all related type errors and cleaned up unused code.
-- Supabase Foreign Key Fix
-  - Corrected all Supabase queries in `src/services/WarehouseService.ts` to use the proper syntax for joining the `packages` and `users` tables.
-  - This resolves the "Could not find a relationship" error and ensures all package data is fetched correctly.
-- Package Intake Suite Number Format
-  - Updated package intake interface to accept any suite number format (VC-001, S001, A123, etc.).
-  - Previously the UI placeholder suggested only "VC-" format, but the system always supported any format.
-  - Updated placeholder text and documentation to clarify format flexibility.
+Quick steps:
+1. Open the Vanguard Cargo website
+2. Log in with your email and password
+3. You'll be taken to your dashboard
+4. Follow the guide for specific tasks
 
-#### 📊 Analytics Dashboard with Professional Charts (Updated 2025-10-08)
-- **Modern Header Design**: Updated Analytics Dashboard header to match Inventory page styling with gradient banner
-- **Professional Data Visualization**: Implemented complete charting system using Recharts library
-  - **Distribution Analysis (Pie Chart)**: Shows breakdown by status/category with dynamic theming
-  - **Volume Trends (Bar Chart)**: Displays activity trends over time (monthly/daily patterns)
-  - **Performance Metrics (Area Chart)**: Visualizes warehouse operational metrics (shipment volume, package counts, weight distribution, user growth) - **no pricing/value data**
-  - **Top Performers (Horizontal Bar Chart)**: Shows top destinations, stores by package volume, or most active users
-- **Warehouse-Focused Metrics** (No Pricing):
-  - Shipments: Total shipments and completed count trends
-  - Packages: Package count and estimated weight by store
-  - Users: User count and geographic percentage distribution
-- **Responsive & Professional Design**:
-  - All charts fully responsive with `ResponsiveContainer`
-  - Custom tooltips with branded styling
-  - Dynamic color schemes based on report type (red for shipments, purple for packages, emerald for users)
-  - Professional loading states and empty data handling
-  - Smooth animations and hover effects
-- **Real Data Integration**: Charts pull live data from Supabase via `AnalyticsService`
-- **Theme-Aware**: Charts change colors automatically when switching between report types
-- **Clean Code Architecture**: Well-documented components with OOP principles and best practices
+### For Developers
 
-#### 👥 User Management System (Added 2025-10-08)
-- **Comprehensive User Overview**: View all registered users with detailed information
-  - User details: Name, email, contact information, suite number, role, status
-  - Real-time statistics dashboard with 6 metric cards:
-    - Total Users, Active Users, Inactive Users, Suspended Users, Clients, Admins
+**Prerequisites:**
+- Node.js 18+
+- pnpm package manager
+- Supabase account
 
-#### 🔒 Secure Login Audit System (Added 2025-10-09)
-- **Enterprise-Grade Authentication Logging**: Complete audit trail of all login activity
-  - Tracks every login attempt (successful and failed)
-  - Records IP addresses, device types, user agents, and timestamps
-  - Automatic suspicious activity detection and risk scoring
-  - Brute force attack protection (flags >5 failed attempts from same IP in 15 minutes)
-- **Security Analytics**:
-  - Real-time monitoring of authentication events
-  - User login statistics with success/failure rates
-  - Device and location tracking for security analysis
-  - Comprehensive JSONB storage for additional context
-- **Compliance & Privacy**:
-  - Automatic 90-day retention policy (configurable)
-  - Immutable audit trail (logs cannot be modified or deleted)
-  - Admin-only access protected by RLS policies
-  - GDPR-compliant with no password logging
-- **Integration Features**:
-  - Automatic logging on every login/logout
-  - Helper functions: `log_auth_event()`, `update_user_last_login()`, `cleanup_old_audit_logs()`
-  - Pre-built views: `recent_login_attempts`, `suspicious_activity`, `user_login_stats`
-  - Full Reports page integration for security monitoring
-- See `AUDIT_LOGGING_GUIDE.md` for complete documentation
-  - Professional table layout with sortable columns and hover effects
-- **Status Management**: 
-  - Activate/Deactivate users with one-click toggle
-  - Status options: `active`, `inactive`, `suspended`, `reported`
-  - Real-time status updates with database synchronization
-  - Visual status badges with color coding (green/gray/red/yellow)
-- **Advanced Filtering & Search**:
-  - Filter by status: All, Active, Inactive, Suspended
-  - Live search across name, email, and suite number
-  - Click-to-filter stat cards for quick navigation
-  - Results count display
-- **Professional UI Design**:
-  - Modern gradient header matching system design
-  - Interactive stat cards with hover effects and animations
-  - Responsive table design with proper overflow handling
-  - Role badges distinguishing Administrators from Clients
-  - Contact information display (phone & WhatsApp)
-- **Service Architecture**:
-  - `UserManagementService`: Clean OOP service class
-  - Database integration via Supabase
-  - Comprehensive error handling
-  - Helper methods for formatting and color coding
-- **Security & Permissions**:
-  - Only administrators (super_admin, admin, warehouse_admin) can access
-  - Protected route with role-based access control
-  - Audit trail via updated_at timestamp
-- **Files Created**:
-  1. `src/services/UserManagementService.ts` - User management service with all business logic
-  2. `src/app/pages/UserManagement/UserManagement.tsx` - Main user management component
-  3. Updated `src/App.tsx` - Added route and navigation
-
-#### 📞 Professional International Phone Input & Enhanced Form Design (Added 2025-10-08)
-- **Smart Phone Number Field** in Create Shipment form:
-  - International phone input with country code selection dropdown
-  - Flag icons for visual country identification
-  - Automatic phone number formatting based on country standards
-  - Real-time validation of phone number format
-  - Search functionality in country dropdown
-- **Auto-Population Feature**:
-  - Delivery country field automatically populates based on phone number's country code
-  - Intelligent country name mapping (60+ countries supported)
-  - Country field is **read-only** - populated only from phone country code selection
-  - Gray background indicates non-editable field
-- **Modern Professional Form Styling**:
-  - **Rounded corners (rounded-xl)** for modern appearance
-  - **2px borders** with gray-200 default color
-  - **Enhanced padding** (px-4 py-3) for comfortable input
-  - **Hover effects** - border darkens on hover
-  - **Focus states** - Red ring (ring-2) with border color change
-  - **Smooth transitions** - 200ms duration for all state changes
-  - **Box shadows** - Subtle shadows for depth
-  - **Section headers** with green gradient accent bars
-  - **Bold labels** with proper spacing (mb-2)
-  - **Consistent spacing** (gap-5) between form elements
-  - **Professional textarea** with resize disabled
-  - **Styled select dropdown** matching input design
-- **Enhanced UX Features**:
-  - One-click country selection from phone field
-  - Reduces data entry errors
-  - Faster form completion
-  - Professional appearance matching modern web standards
-  - Read-only country field prevents manual errors
-  - Visual feedback on all interactions (hover, focus, active)
-  - Consistent color scheme throughout form
-- **Library Integration**:
-  - Uses `react-phone-number-input` for robust international phone handling
-  - Phone number parsing and validation
-  - Country code detection and mapping
-
-#### 🔍 Package Search in Create Shipment (Added 2025-10-08)
-- **Real-Time Search Functionality** for Available Packages section:
-  - Professional search input with icon and clear button
-  - Live filtering as you type
-  - Searches across multiple fields:
-    - User name
-    - Suite number
-    - Package ID
-    - Tracking number
-    - Description
-    - Store name
-    - Vendor name
-- **Smart Search Features**:
-  - Case-insensitive search
-  - Instant results (no delay)
-  - Shows count: "X of Y packages" 
-  - Clear button (X icon) appears when searching
-  - "No results" message with clear search button
-  - Select All button works with filtered results
-- **Enhanced Package Management**:
-  - Quickly find specific packages for shipment creation
-  - Search by customer details (name, suite)
-  - Search by package identifiers (ID, tracking)
-  - Search by vendor/store information
-- **Professional UI Design**:
-  - Modern rounded input matching form style
-  - Red accent theme for consistency
-  - Hover and focus states
-  - Smooth transitions
-  - Clear visual feedback
-- **File Updated**:
-  - `src/app/pages/CreateShipment/CreateShipment.tsx` - Added search functionality with filtering logic
-
-#### 🔧 Tracking Number Consistency Fix (Fixed 2025-10-08)
-- **Fixed Tracking Number Mismatch** between creation and display:
-  - ShipmentHistory interface now uses `tracking_number` instead of `shipment_number`
-  - Direct mapping from database `tracking_number` field (no transformation)
-  - Consistent tracking number display across all pages
-  - Fixed search functionality to use correct field name
-- **Root Cause**: Interface was using `shipment_number` while database has `tracking_number`
-- **Impact**: Tracking numbers now match exactly between:
-  - Create Shipment success message
-  - Shipment History list
-  - Client-facing displays
-  - Search results
-- **File Updated**:
-  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Fixed interface and field mappings
-
-#### 📧 Email Notification System (Implemented 2025-10-08)
-- **Automated Email Notifications** for all in-app notifications:
-  - Emails sent from: `noreply@vanguardcargo.co`
-  - Uses Resend API for reliable delivery
-  - Professional HTML templates with VanguardCargo branding
-  - Respects user preferences (can be disabled per user)
-- **Notification Types with Custom Styling**:
-  - 📦 Package Updates (Blue theme)
-  - 🚚 Shipment Updates (Purple theme)
-  - 🔔 System Notifications (Gray theme)
-  - 🎁 Promotions (Green theme)
-- **Automatic Queueing System**:
-  - Database trigger queues emails when notifications created
-  - Background processor runs every 30 seconds
-  - Automatic retry (up to 3 attempts) for failed emails
-  - Full audit trail in `email_notification_log` table
-- **Fixed Shipment Status Notifications**:
-  - Updated `warehouseShipmentService.updateShipmentStatus()` to call RPC function
-  - Now creates notifications for ALL status changes (not just manual updates)
-  - Notifications sent for: pending → processing → shipped → in_transit → arrived
-  - Each status change triggers both in-app notification AND email
-- **Files Modified**:
-  - `src/services/emailNotificationService.ts` - Email sending service
-  - `src/hooks/useEmailNotificationProcessor.ts` - Background queue processor
-  - `src/services/warehouseShipmentService.ts` - Fixed to use RPC function
-  - `src/App.tsx` - Integrated email processor
-  - `sql/70_email_notification_system.sql` - Database schema and triggers
-- **Setup Required**:
-  - Add `VITE_RESEND_API_KEY` to `.env.local`
-  - Run SQL file: `sql/70_email_notification_system.sql`
-  - Verify domain with Resend: `vanguardcargo.co`
-
-#### 🔐 Delivery Verification Workflow (Enhanced 2025-10-08)
-- **Removed Direct "Mark as Delivered" Option** from Shipment History:
-  - Shipments with "arrived" status no longer show "Mark as Delivered" button
-  - Removed verification modal from Shipment History page
-  - Forces use of dedicated Delivery page with proper workflow
-  - Prevents accidental or unauthorized delivery confirmation
-- **Mandatory Verification Workflow**:
-  - All arrived packages MUST be marked delivered through the Delivery page only
-  - Delivery page has dedicated 6-digit pickup code verification system
-  - Cannot bypass verification - security enforced at application level
-  - Aligns with pickup code system in database (SQL files 60, 61)
-- **Delivery Notifications (Added 2025-10-08)**:
-  - ✅ Customers automatically receive in-app notification when package is delivered
-  - Notification includes package ID and links to tracking page
-  - Notification type: 'package_update' with title '📦 Package Delivered'
-  - Complete delivery confirmation workflow with customer communication
-- **Automatic Email on Status Change (Added 2025-10-09)**:
-  - ✅ Database triggers automatically send emails on **ANY** package/shipment status change
-  - Calls Supabase Edge Function `send-notification-email` via `pg_net` extension
-  - **Completely database-driven** - zero frontend code required
-  - Package emails: received → processing → shipped → in_transit → arrived → delivered
-  - Shipment emails: pending → processing → shipped → in_transit → arrived
-  - Status-specific icons, titles, and messages for each transition
-  - Integrates with existing Resend email infrastructure
-  - See `AUTO_EMAIL_SETUP.md` for 3-minute setup guide
-  - Files: `sql/86_auto_email_on_delivery.sql`
-- **Clean Separation of Concerns**:
-  - **Shipment History**: Track and manage shipments up to "arrived" status
-  - **Delivery Page**: Handle final delivery confirmation with 6-digit codes
-  - Clear workflow: Create → Track → Arrive → Verify → Deliver → Notify ✅
-- **Benefits**:
-  - Single source of truth for delivery verification
-  - Consistent user experience for all deliveries
-  - Proper audit trail through dedicated delivery system
-  - Prevents status manipulation
-  - Customers informed immediately upon successful delivery
-- **Files Updated**:
-  - `src/app/pages/ShipmentHistory/ShipmentHistory.tsx` - Removed verification modal, set arrived → null status flow
-  - `sql/85_add_delivery_notification.sql` - Added notification creation to verify_delivery_code() function
-
-## Authentication & Access Control
-
-### 🔐 Database Role-Based Authentication (Updated 2025-10-10)
-
-The warehouse system uses **database-driven role-based access control (RBAC)** where user roles are stored in and fetched from the database. Authentication is handled by Supabase Auth with role validation on login.
-
-#### **Authorized Roles for Warehouse Access**
-
-Only users with the following roles in the database can access the warehouse system:
-- ✅ **Super Administrator** (`superadmin` or `super_admin`)
-- ✅ **Administrator** (`admin`)
-- ✅ **Warehouse Administrator** (`warehouse_admin`)
-- ❌ **Client** (`client`) - No warehouse access
-
-#### **How It Works**
-
-1. **Login**: User enters email and password
-2. **Authentication**: Supabase validates credentials
-3. **Role Check**: System fetches user's role from `users` table
-4. **Authorization**: Access granted only if role is `superadmin`, `admin`, or `warehouse_admin`
-5. **Status Check**: User must have `status = 'active'` in database
-
-#### **Key Changes from Previous System**
-
-❌ **Old System**: Email pattern-based role determination
-```typescript
-// OLD: Determined role from email patterns
-if (email.includes('admin@')) return 'admin';
-if (email.includes('warehouse@')) return 'warehouse_admin';
-```
-
-✅ **New System**: Database role field validation
-```typescript
-// NEW: Fetches role from database
-const { data } = await supabase
-  .from('users')
-  .select('role, status')
-  .eq('id', userId)
-  .single();
-  
-// Only allow if role is authorized and status is active
-if (isAuthorizedRole(data.role) && data.status === 'active') {
-  // Grant access
-}
-```
-
-#### **Implementation Files**
-- **Service**: `src/services/warehouseAuthService.ts` - Role fetching and validation
-- **Login**: `src/app/login.tsx` - Login page with database role check
-- **Hook**: `src/hooks/useWarehouseAuth.ts` - Authentication state management
-
-### Login Format
-
-- **Email**: User's registered email address
-- **Password**: User's password
-
-### Database Deployment
-
-### SQL Scripts Execution Order
-
-**Important**: Run these SQL scripts in the exact order listed to avoid dependency issues:
-
-1. **Core Tables**: `sql/01_create_tables.sql` - Create base tables
-2. **Auth Functions**: `sql/02_auth_functions.sql` - Authentication setup
-3. **[Other existing SQL files...]** - Run your existing numbered SQL files in order
-4. **Security Fixes** (Run these LAST after all tables are created):
-   - `sql/71_enable_rls_security.sql` - Enable RLS on tables
-   - `sql/72_fix_function_security.sql` - Fix function search_path
-   - `sql/73_fix_users_table_policies.sql` - Fix users table recursion (SKIP if running #75)
-   - `sql/74_fix_email_policies_recursion.sql` - Fix email policies (SKIP if running #75)
-   - **`sql/75_fix_all_rls_policies.sql`** - ⭐ **RUN THIS** - Comprehensive RLS fix (includes 73 & 74)
-
-### Quick Setup
-
+**Installation:**
 ```bash
-# Run in Supabase SQL Editor in this order:
-1. All existing numbered SQL files (01-69)
-2. sql/71_enable_rls_security.sql
-3. sql/72_fix_function_security.sql
-4. sql/75_fix_all_rls_policies.sql  # This fixes all policy issues
+# Install dependencies
+pnpm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your Supabase credentials
+
+# Run development server
+pnpm run dev
+
+# Build for production
+pnpm run build
 ```
 
-### ⚠️ Troubleshooting
-
-**Infinite Recursion Error**: 
-- Run `sql/75_fix_all_rls_policies.sql` - This fixes users table policies
-- Restart your dev server
-
-**Network Error on Dashboard**:
-- Check RLS policies are not blocking queries
-- Run `sql/75_fix_all_rls_policies.sql`
-
-**Email Tables Don't Exist**:
-- Email notification system requires manual setup
-- Tables will be created when email feature is implemented
-
-## User Management
-
-### Creating Warehouse Users
-
-Users with warehouse access must be created with appropriate roles in the database:
-
-```sql
--- Example: Create a warehouse administrator user
-INSERT INTO public.users (
-  id, email, first_name, last_name, role, status
-) VALUES (
-  'user-uuid-here',
-  'warehouse@vanguardcargo.com',
-  'John',
-  'Doe',
-  'warehouse_admin',
-  'active'
-);
+**Environment Variables:**
+```env
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-supabase-anon-key
 ```
 
-### Activating/Deactivating Users
+---
 
-Use the **User Management** page in the warehouse app to:
-- ✅ Activate users: Sets `status = 'active'`
-- ❌ Deactivate users: Sets `status = 'inactive'`
-- 🔒 Suspend users: Sets `status = 'suspended'`
+## Technology Stack
 
-Only **active** users with authorized roles can access the warehouse system.
+### Frontend
+- React 18 - UI framework
+- TypeScript - Type safety
+- Vite - Build tool
+- TailwindCSS - Styling
+- React Router - Navigation
+- Recharts - Data visualization
+- Lucide React - Icons
 
-### Querying Active Users
+### Backend
+- Supabase - Backend as a Service
+- PostgreSQL - Database
+- Row Level Security - Data access control
+- Supabase Auth - Authentication
 
-```typescript
-// Get all active warehouse staff
-const { data } = await supabase
-  .from('users')
-  .select('*')
-  .eq('status', 'active')
-  .in('role', ['superadmin', 'admin', 'warehouse_admin']);
+### Libraries
+- JsBarcode - Barcode generation
+- QRCode.react - QR code generation
+- React-to-print - Document printing
+- Date-fns - Date manipulation
+
+---
+
+## System Architecture
+
+### Authentication Flow
+1. User logs in with email/password
+2. Supabase validates credentials
+3. System checks user role from database
+4. User redirected to dashboard with appropriate permissions
+
+### Package Flow
+1. **Intake** - Package registered in system
+2. **Inspection** - Quality check and verification
+3. **Ready** - Available for shipment
+4. **In Shipment** - Added to active shipment
+5. **Out for Delivery** - With courier
+6. **Delivered** - Successfully received by customer
+
+### Shipment Flow
+1. **Creation** - Select packages and create shipment
+2. **Waybill Generation** - Automatic document creation
+3. **Label Printing** - Barcode and shipping labels
+4. **Dispatch** - Hand over to courier
+5. **Tracking** - Real-time status updates
+6. **Delivery Confirmation** - Customer receipt
+
+---
+
+## Security Features
+
+### Authentication Security
+- ✅ Secure password hashing
+- ✅ JWT token-based authentication
+- ✅ Automatic session management
+- ✅ Role-based access control
+
+### Data Security
+- ✅ Row Level Security (RLS) policies
+- ✅ Encrypted data transmission (HTTPS)
+- ✅ Secure API endpoints
+- ✅ Input validation and sanitization
+
+### Operational Security
+- ✅ Delivery verification codes
+- ✅ Audit logging for all actions
+- ✅ User activity tracking
+- ✅ Secure document generation
+
+---
+
+## Development
+
+### Project Structure
+```
+src/
+├── app/              # Application pages
+│   ├── pages/        # Page components
+│   └── login.tsx     # Login page
+├── components/       # Reusable components
+│   ├── layout/       # Layout components
+│   └── ui/           # UI components
+├── hooks/            # Custom React hooks
+├── services/         # API service layer
+├── types/            # TypeScript definitions
+├── lib/              # Utility libraries
+└── config/           # Configuration files
 ```
 
-## Expanding the ESLint configuration
+### Key Services
+- **warehouseAuthService.ts** - Authentication logic
+- **warehousePackageService.ts** - Package operations
+- **warehouseShipmentService.ts** - Shipment operations
+- **warehouseDocumentService.ts** - Document generation
+- **AnalyticsService.ts** - Analytics and reporting
+- **DashboardService.ts** - Dashboard data
+- **UserManagementService.ts** - User administration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Support
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### For Warehouse Users
+- **User Guide:** [USER_GUIDE.md](./USER_GUIDE.md)
+- **Email:** support@vanguardcargo.com
+- **Phone:** [Your support number]
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+### For Developers
+- **Issues:** Report bugs via GitHub Issues
+- **Documentation:** Check inline code comments
+- **Contributions:** Pull requests welcome
+
+---
+
+## Database Schema
+
+### Core Tables
+- **users / user_profiles** - User accounts
+- **packages** - Package information
+- **shipments** - Shipment records
+- **package_shipments** - Package-shipment relationships
+- **warehouses** - Warehouse locations
+- **notifications** - System notifications
+- **package_status_history** - Status audit trail
+- **package_receipts** - Receipt records
+
+---
+
+## License
+
+Proprietary - © 2025 Vanguard Cargo. All rights reserved.
+
+---
+
+## Version
+
+**Current Version:** 1.0.0
+
+### Recent Updates
+- ✅ Complete authentication system with role-based access
+- ✅ Package intake and management
+- ✅ Shipment creation and tracking
+- ✅ Delivery management with verification codes
+- ✅ Analytics and reporting dashboard
+- ✅ Document generation (waybills, receipts)
+- ✅ Barcode and QR code system
+- ✅ User management for administrators
+- ✅ Comprehensive user guide for end users
+
+---
+
+**For complete usage instructions, see [USER_GUIDE.md](./USER_GUIDE.md)**

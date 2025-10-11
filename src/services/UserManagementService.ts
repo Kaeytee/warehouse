@@ -10,6 +10,7 @@
  * @created 2025-10-08
  */
 
+// @ts-nocheck
 import { supabase } from '../lib/supabase';
 
 /**

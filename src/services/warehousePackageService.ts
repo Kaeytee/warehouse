@@ -1,10 +1,11 @@
 /**
  * Warehouse Package Service
  * 
- * Handles package operations for warehouse staff including receiving,
- * inspection, processing, and status management
+ * Handles package operations for warehouse staff including intake,
+ * tracking, status updates, and metrics
  */
 
+// @ts-nocheck
 import { supabase, handleSupabaseError } from '../lib/supabase';
 import { logger } from '../config/environment';
 

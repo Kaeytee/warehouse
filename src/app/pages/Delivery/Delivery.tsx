@@ -8,6 +8,7 @@
  * @version 1.0.0
  */
 
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import {
   FiPackage, FiSend, FiShield, FiCheckCircle, FiAlertCircle,

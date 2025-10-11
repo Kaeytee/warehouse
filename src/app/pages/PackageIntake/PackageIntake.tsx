@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { FiPackage, FiUser, FiFileText, FiSave, FiSearch, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';

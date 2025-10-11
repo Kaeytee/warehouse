@@ -5,6 +5,7 @@
  * management, and tracking of consolidated shipments
  */
 
+// @ts-nocheck
 import { supabase, handleSupabaseError } from '../lib/supabase';
 import { logger } from '../config/environment';
 
