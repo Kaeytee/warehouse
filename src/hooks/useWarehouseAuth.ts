@@ -1,19 +1,18 @@
-/**
- * Warehouse Authentication Hook - Fixed Version
- * 
- * Simplified authentication with proper session restoration
- * Eliminates race conditions and stuck loading states
- */
-
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../lib/supabase";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { supabase, clearAuthTokens } from "../lib/supabase";
 import { WarehouseAuthService } from "../services/warehouseAuthService";
 import { useNavigate } from "react-router-dom";
+import { logger } from "../config/environment";
 
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    displayName: string;
+  } | null;
   error: string | null;
 }
 
@@ -24,106 +23,168 @@ const initialAuthState: AuthState = {
   error: null,
 };
 
+// Simple auth cache to avoid repeated database queries
+let authCache: { userId: string; role: string; timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function recoverSession(): Promise<boolean> {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error || !session?.user) {
+      logger.info('No valid session found');
+      return false;
+    }
+
+    logger.info('Valid session found');
+    return true;
+  } catch (error) {
+    logger.error('Session recovery error:', error);
+    return false;
+  }
+}
+
+async function getCachedUserRole(userId: string): Promise<string> {
+  // Check cache first
+  if (authCache && authCache.userId === userId && Date.now() - authCache.timestamp < CACHE_DURATION) {
+    logger.info('Using cached user role');
+    return authCache.role;
+  }
+
+  // Fetch from database
+  const role = await WarehouseAuthService.fetchUserRole(userId);
+
+  // Update cache
+  authCache = {
+    userId,
+    role,
+    timestamp: Date.now()
+  };
+
+  return role;
+}
+
 export const useWarehouseAuth = () => {
   const [authState, setAuthState] = useState<AuthState>(initialAuthState);
   const navigate = useNavigate();
+  const initializationRef = useRef(false);
 
   const updateAuthState = useCallback((updates: Partial<AuthState>) => {
     setAuthState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const handleAuthError = useCallback((error: string) => {
-    updateAuthState({ 
-      isLoading: false, 
-      isAuthenticated: false, 
-      user: null, 
-      error 
-    });
-  }, [updateAuthState]);
+  const signIn = async (email: string, password: string) => {
+    updateAuthState({ isLoading: true, error: null });
 
-  const validateAndSetUser = useCallback(async (user: any) => {
-    if (!user) {
-      updateAuthState({ 
-        isLoading: false, 
-        isAuthenticated: false, 
-        user: null 
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
+
+      if (error) {
+        updateAuthState({ isLoading: false, isAuthenticated: false, error: error.message });
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const role = await getCachedUserRole(data.user.id);
+
+        if (WarehouseAuthService.isAuthorizedRole(role)) {
+          updateAuthState({
+            isAuthenticated: true,
+            isLoading: false,
+            user: {
+              id: data.user.id,
+              email: data.user.email || '',
+              role,
+              displayName: WarehouseAuthService.getRoleDisplayName(role),
+            },
+            error: null
+          });
+          return { success: true };
+        } else {
+          await supabase.auth.signOut();
+          updateAuthState({ isLoading: false, isAuthenticated: false, error: 'Access denied: Insufficient permissions' });
+          return { success: false, error: 'Access denied: Insufficient permissions' };
+        }
+      }
+
+      return { success: false, error: 'Login failed' };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed';
+      updateAuthState({ isLoading: false, isAuthenticated: false, error: message });
+      return { success: false, error: message };
+    }
+  };
+
+  useEffect(() => {
+    if (initializationRef.current) {
+      logger.info('Auth initialization already in progress, skipping');
       return;
     }
 
-    try {
-      // Fetch user role from database
-      const role = await WarehouseAuthService.fetchUserRole(user.id);
-      
-      // Check if role is authorized
-      if (!WarehouseAuthService.isAuthorizedRole(role)) {
-        await supabase.auth.signOut();
-        handleAuthError('Access denied: Insufficient permissions');
-        return;
-      }
+    initializationRef.current = true;
 
-      // Set authenticated state
-      updateAuthState({
-        isAuthenticated: true,
-        isLoading: false,
-        user: {
-          id: user.id,
-          email: user.email,
-          role,
-          displayName: WarehouseAuthService.getRoleDisplayName(role),
-        },
-        error: null
-      });
-    } catch (error) {
-      console.error('Auth validation error:', error);
-      handleAuthError('Authentication validation failed');
-    }
-  }, [updateAuthState, handleAuthError]);
-
-  // Initialize authentication state
-  useEffect(() => {
     let isMounted = true;
 
     const initializeAuth = async () => {
+      logger.info('Starting auth initialization');
+
       try {
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session error:', error);
-          if (isMounted) handleAuthError('Session validation failed');
-          return;
+        const hasSession = await recoverSession();
+
+        if (hasSession) {
+          const { data: { session }, error } = await supabase.auth.getSession();
+
+          if (session?.user && !error) {
+            const role = await getCachedUserRole(session.user.id);
+
+            if (WarehouseAuthService.isAuthorizedRole(role)) {
+              updateAuthState({
+                isAuthenticated: true,
+                isLoading: false,
+                user: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role,
+                  displayName: WarehouseAuthService.getRoleDisplayName(role),
+                },
+                error: null
+              });
+              logger.info('User authenticated successfully');
+              return;
+            }
+          }
         }
 
-        if (session?.user && isMounted) {
-          await validateAndSetUser(session.user);
-        } else if (isMounted) {
-          updateAuthState({ isLoading: false, isAuthenticated: false, user: null });
-        }
+        updateAuthState({ isLoading: false, isAuthenticated: false });
+        logger.info('No valid authentication found');
+
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        if (isMounted) handleAuthError('Authentication initialization failed');
+        logger.error('Auth initialization failed:', error);
+        updateAuthState({
+          isLoading: false,
+          isAuthenticated: false,
+          error: 'Authentication initialization failed'
+        });
       }
     };
 
     initializeAuth();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!isMounted) return;
 
-        console.log('Auth state change:', event, !!session);
-
         if (event === 'SIGNED_OUT' || !session) {
+          logger.info('User signed out');
           updateAuthState({
             isAuthenticated: false,
             isLoading: false,
             user: null,
             error: null
           });
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          await validateAndSetUser(session.user);
         }
       }
     );
@@ -131,42 +192,31 @@ export const useWarehouseAuth = () => {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      initializationRef.current = false;
     };
-  }, [validateAndSetUser, updateAuthState, handleAuthError]);
+  }, []);
 
-  // Handle navigation based on auth state
   useEffect(() => {
-    if (!authState.isLoading && !authState.isAuthenticated && window.location.pathname !== '/login') {
-      navigate('/login', { replace: true });
-    }
+    const timeoutId = setTimeout(() => {
+      if (!authState.isLoading && !authState.isAuthenticated && window.location.pathname !== '/login') {
+        logger.info('Redirecting unauthenticated user to login');
+        navigate('/login', { replace: true });
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [authState.isAuthenticated, authState.isLoading, navigate]);
 
-  const signIn = async (email: string, password: string) => {
-    updateAuthState({ isLoading: true, error: null });
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
-      
-      if (error) {
-        handleAuthError(error.message);
-        return { success: false, error: error.message };
-      }
-      
-      if (data.user) {
-        await validateAndSetUser(data.user);
-        return { success: true };
-      }
-      
-      return { success: false, error: 'Login failed' };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed';
-      handleAuthError(message);
-      return { success: false, error: message };
-    }
-  };
+  const resetAuth = useCallback(() => {
+    logger.info('Manual auth reset triggered');
+    updateAuthState({
+      isLoading: false,
+      isAuthenticated: false,
+      user: null,
+      error: null
+    });
+    clearAuthTokens();
+  }, [updateAuthState]);
 
   const signOut = async () => {
     try {
@@ -179,7 +229,6 @@ export const useWarehouseAuth = () => {
       });
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force local state reset even if API call fails
       updateAuthState({
         isAuthenticated: false,
         isLoading: false,
@@ -193,6 +242,7 @@ export const useWarehouseAuth = () => {
     ...authState,
     signIn,
     signOut,
+    resetAuth,
     hasRole: (role: string) => authState.user?.role === role,
     displayName: authState.user?.displayName || '',
   };

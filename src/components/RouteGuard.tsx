@@ -29,17 +29,17 @@ const RouteGuard: React.FC<RouteGuardProps> = ({
   const { isAuthenticated, user, isLoading } = useWarehouseAuth();
   const location = useLocation();
 
-  // Do not block UI during auth loading to improve perceived performance
-  // Previously showed a full-screen red loader here; removed per UX requirement
-
-  // While auth is resolving, show loading state to prevent redirect flicker
+  // Only show loading if we're actually initializing auth
+  // This prevents flickering during normal auth state changes
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   // Redirect to login only after we know auth state and user is not authenticated

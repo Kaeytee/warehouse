@@ -79,26 +79,33 @@ export class WarehouseAuthService {
     try {
       // Import supabase dynamically to avoid circular dependency
       const { supabase } = await import('../lib/supabase');
-      
-      // Fetch user's role from database
-      const { data, error } = await supabase
+
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database query timeout')), 3000);
+      });
+
+      // Fetch user's role from database with timeout
+      const queryPromise = supabase
         .from('users')
         .select('role, status')
         .eq('id', userId)
         .single();
-      
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
       // If error or user not found, unauthorized
       if (error || !data) {
         console.error('Error fetching user role:', error);
         return 'unauthorized';
       }
-      
+
       // Check if user is active
       if (data.status !== 'active') {
         console.warn(`User ${userId} is not active (status: ${data.status})`);
         return 'unauthorized';
       }
-      
+
       // Return the database role
       return data.role || 'unauthorized';
     } catch (error) {

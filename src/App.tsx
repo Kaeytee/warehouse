@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useWarehouseAuth } from './hooks/useWarehouseAuth';
 // import { useEmailNotificationProcessor } from './hooks/useEmailNotificationProcessor'; // Disabled until email tables created
 import { ThemeProvider } from './contexts/ThemeContext';
+import { setupTokenMonitor } from './lib/supabase';
 import Login from './app/login';
 import Dashboard from './app/pages/dashboard';
 import AppLayout from './components/layout/AppLayout';
@@ -28,17 +29,20 @@ import UnauthorizedPage from './components/UnauthorizedPage';
 const LoginRoute = (): React.ReactElement => {
   const { isAuthenticated, isLoading } = useWarehouseAuth();
 
-  // Show loading during authentication check
+  // Show loading only if we're actually checking authentication
+  // This prevents flickering when auth state changes
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Checking authentication...</p>
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
-  // Only redirect when loading is complete AND user is authenticated
+  // Only redirect when we're sure the user is authenticated
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -57,13 +61,17 @@ const ProtectedRoute = (): React.ReactElement => {
   const { isAuthenticated, isLoading } = useWarehouseAuth();
   const location = useLocation();
 
+  // Show loading only if we're actually checking authentication
+  // This prevents flickering when auth state changes
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
-    </div>;
+    );
   }
 
   if (!isAuthenticated) {
@@ -219,6 +227,14 @@ const App = (): React.ReactElement => {
     // Initialize any global settings or analytics here
     console.log('Vanguard Cargo Warehouse App - Role-Based Access Control Enabled');
     console.log('⚠️ Email Notification System: DISABLED (tables not created)');
+
+    // Initialize token monitoring for robust session management
+    const { data: { subscription } } = setupTokenMonitor();
+
+    // Cleanup token monitor on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   return (

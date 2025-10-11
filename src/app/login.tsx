@@ -10,7 +10,7 @@ import image from '../assets/logo.png';
  * Warehouse Login Component - Database Role-Based Authentication
  */
 const Login = () => {
-  const { isAuthenticated, isLoading: authLoading } = useWarehouseAuth();
+  const { isAuthenticated } = useWarehouseAuth();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
@@ -18,24 +18,29 @@ const Login = () => {
   const [localError, setLocalError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle redirect when authenticated
+  // Handle redirect when authenticated - with debounce to prevent flickering
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, authLoading, navigate]);
+    if (isAuthenticated) {
+      // Add a small delay to prevent flickering
+      const timeoutId = setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
 
-  // Show loading while auth is checking
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Remove loading state - let the component render immediately
+  // if (authLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+  //         <p className="text-gray-600">Checking authentication...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Don't render login form if already authenticated (hook will redirect)
   if (isAuthenticated) {
