@@ -18,7 +18,6 @@ import {
   FiEye,
   FiSend,
   FiBox,
-  FiBarChart,
   FiRefreshCw,
   FiDownload,
   FiUser,
@@ -75,7 +74,6 @@ const PackageManagement: React.FC = () => {
   const [summary, setSummary] = useState({
     totalPackages: 0,
     received: 0,
-    processing: 0,
     shipped: 0,
     totalWeight: '0kg',
   });
@@ -113,11 +111,15 @@ const PackageManagement: React.FC = () => {
   const calculateSummaryMetrics = (packageData: any[]) => {
     const totalPackages = packageData.length;
     const received = packageData.filter(pkg => pkg.status === 'received').length;
-    const processing = packageData.filter(pkg => pkg.status === 'processing').length;
     const shipped = packageData.filter(pkg => pkg.status === 'shipped').length;
     
-    // Calculate total weight
+    // Calculate total weight - exclude delivered packages from weight calculation
     const totalWeight = packageData.reduce((sum, pkg) => {
+      // Exclude delivered packages from weight calculation
+      if (pkg.status === 'delivered') {
+        return sum;
+      }
+      
       // Handle both string and number weight formats
       let weight = 0;
       if (typeof pkg.weight === 'string') {
@@ -131,7 +133,6 @@ const PackageManagement: React.FC = () => {
     return {
       totalPackages,
       received,
-      processing,
       shipped,
       totalWeight: `${totalWeight.toFixed(1)}kg`
     };
@@ -296,7 +297,6 @@ const PackageManagement: React.FC = () => {
     { value: 'all', label: 'All Status' },
     { value: 'pending', label: 'Pending' },
     { value: 'received', label: 'Received' },
-    { value: 'processing', label: 'Processing' },
     { value: 'shipped', label: 'Shipped' },
     { value: 'delivered', label: 'Delivered' },
   ];
@@ -310,7 +310,6 @@ const PackageManagement: React.FC = () => {
     const statusClasses = {
       pending: 'border-yellow-400 text-yellow-600 bg-yellow-50',
       received: 'border-red-400 text-red-600 bg-red-50',
-      processing: 'border-purple-400 text-purple-600 bg-purple-50',
       shipped: 'border-green-400 text-green-600 bg-green-50',
       delivered: 'border-gray-400 text-gray-600 bg-gray-50'
     };
@@ -397,7 +396,7 @@ const PackageManagement: React.FC = () => {
           
 
       {/* Package summary metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
         {/* Total Packages Card */}
         <button
           onClick={() => setStatusFilter('all')}
@@ -450,34 +449,6 @@ const PackageManagement: React.FC = () => {
               </div>
               <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
                 <FiBox className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-              </div>
-            </div>
-          </div>
-        </button>
-        
-        {/* Processing Card */}
-        <button
-          onClick={() => setStatusFilter('processing')}
-          className={`group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30 p-3 sm:p-6 hover:shadow-xl hover:shadow-purple-500/40 transition-all duration-300 overflow-hidden text-left w-full ${
-            statusFilter === 'processing' ? 'ring-4 ring-white ring-offset-2 scale-105' : 'hover:scale-102'
-          }`}>
-          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/10 rounded-full"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-start justify-between mb-3 sm:mb-4">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  <p className="text-xs sm:text-sm font-semibold text-white/90 uppercase tracking-wide">Processing</p>
-                </div>
-                <p className="text-2xl sm:text-4xl font-bold text-white mb-1">
-                  {summary.processing}
-                </p>
-                <p className="text-xs sm:text-sm text-white/80 font-medium">Being prepared</p>
-              </div>
-              <div className="p-2.5 sm:p-3 bg-white/20 rounded-xl shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-                <FiBarChart className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
             </div>
           </div>
@@ -545,12 +516,6 @@ const PackageManagement: React.FC = () => {
               {selectedPackages.length} package{selectedPackages.length !== 1 ? 's' : ''} selected
             </span>
             <div className="flex gap-2">
-              <button
-                onClick={() => handleBulkStatusUpdate('processing')}
-                className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 transition-colors"
-              >
-                Mark Processing
-              </button>
               <button
                 onClick={() => handleBulkStatusUpdate('shipped')}
                 className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"

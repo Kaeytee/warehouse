@@ -451,8 +451,7 @@ const ShipmentHistory: React.FC = () => {
     all: totalShipments,
     shipped: shipments.filter(s => s.status === 'shipped').length,
     in_transit: shipments.filter(s => s.status === 'in_transit').length,
-    arrived: shipments.filter(s => s.status === 'arrived').length,
-    delivered: shipments.filter(s => s.status === 'delivered').length
+    arrived: shipments.filter(s => s.status === 'arrived').length
   };
 
   return (
@@ -499,13 +498,12 @@ const ShipmentHistory: React.FC = () => {
         )}
 
         {/* Status Overview Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {[
             { key: 'all', label: 'All', icon: FiBox, gradient: 'from-gray-500 to-gray-600' },
             { key: 'shipped', label: 'Shipped', icon: FiSend, gradient: 'from-purple-500 to-purple-600' },
             { key: 'in_transit', label: 'In Transit', icon: FiMapPin, gradient: 'from-blue-500 to-blue-600' },
-            { key: 'arrived', label: 'Arrived', icon: FiPackage, gradient: 'from-amber-500 to-amber-600' },
-            { key: 'delivered', label: 'Delivered', icon: FiCheck, gradient: 'from-emerald-500 to-emerald-600' }
+            { key: 'arrived', label: 'Arrived', icon: FiPackage, gradient: 'from-amber-500 to-amber-600' }
           ].map(({ key, label, icon: Icon, gradient }) => (
             <button
               key={key}

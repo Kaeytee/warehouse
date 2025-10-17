@@ -53,6 +53,7 @@ Vanguard Cargo is a warehouse-to-warehouse international cargo platform that ena
 - 🔐 **Delivery Verification** - 6-digit secure pickup codes
 - 📈 **Analytics & Reporting** - Comprehensive performance metrics
 - 🔒 **Role-Based Permissions** - Granular access control
+- 💾 **Saved Recipients** - Save and reuse recipient details for faster shipment creation
 
 ---
 
@@ -253,6 +254,7 @@ src/
 - **notifications** - System notifications
 - **package_status_history** - Status audit trail
 - **package_receipts** - Receipt records
+- **saved_recipients** - Saved recipient details for quick selection
 
 ---
 
@@ -264,7 +266,7 @@ Proprietary - © 2025 Vanguard Cargo. All rights reserved.
 
 ## Version
 
-**Current Version:** 1.0.0
+**Current Version:** 1.0.1
 
 ### Recent Updates
 - ✅ Complete authentication system with role-based access
@@ -276,6 +278,9 @@ Proprietary - © 2025 Vanguard Cargo. All rights reserved.
 - ✅ Barcode and QR code system
 - ✅ User management for administrators
 - ✅ Comprehensive user guide for end users
+- ✅ Inventory total weight calculation now excludes delivered packages
+- ✅ **NEW:** Saved Recipients feature - Save and reuse recipient details when creating shipments
+- ✅ **FIXED:** Shipment status now correctly updates to 'delivered' when all packages are delivered (v1.0.1 - 2025-10-17)
 
 ---
 

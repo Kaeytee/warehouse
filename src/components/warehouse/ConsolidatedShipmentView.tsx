@@ -685,12 +685,12 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
   const getDeliveryTimeframe = (serviceType: string): string => {
     switch (serviceType.toLowerCase()) {
       case 'express':
-        return '(3-5 business days)';
+        return '(3 business days)';
       case 'overnight':
-        return '(1-2 business days)';
+        return '(3 business days)';
       case 'standard':
       default:
-        return '(5-7 business days)';
+        return '(3 business days)';
     }
   };
 

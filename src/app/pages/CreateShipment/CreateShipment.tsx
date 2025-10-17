@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPackage, FiMapPin, FiLoader, FiAlertCircle, FiFileText, FiSend } from 'react-icons/fi';
+import { FiPackage, FiMapPin, FiLoader, FiAlertCircle, FiFileText, FiSend, FiBookmark, FiSave, FiTrash2 } from 'react-icons/fi';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import { supabase } from '../../../lib/supabase';
 import { warehouseDocumentService } from '../../../services/warehouseDocumentService';
@@ -72,12 +72,44 @@ const CreateShipment: React.FC = () => {
   // Phone number state for international input
   const [phoneValue, setPhoneValue] = useState<string>('');
 
+  // Saved recipients state
+  const [savedRecipients, setSavedRecipients] = useState<any[]>([]);
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string>('');
+  const [saveRecipientOnSubmit, setSaveRecipientOnSubmit] = useState(false);
+  const [recipientNickname, setRecipientNickname] = useState('');
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
+
   /**
    * Fetch packages with 'received' status on component mount
    */
   useEffect(() => {
     fetchReceivedPackages();
-  }, []);
+    if (user?.id) {
+      fetchSavedRecipients();
+    }
+  }, [user?.id]);
+
+  /**
+   * Fetch all saved recipients for the current user
+   */
+  const fetchSavedRecipients = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_saved_recipients', {
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error fetching saved recipients:', error);
+        return;
+      }
+
+      setSavedRecipients(data || []);
+    } catch (err) {
+      console.error('Error loading saved recipients:', err);
+    }
+  };
 
   /**
    * Fetch all packages with 'received' status from the database
@@ -166,6 +198,133 @@ const CreateShipment: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  /**
+   * Handle saved recipient selection
+   */
+  const handleRecipientSelect = (recipientId: string) => {
+    setSelectedRecipientId(recipientId);
+    
+    if (!recipientId) {
+      // Clear form if "None" selected
+      setFormData({
+        recipientName: '',
+        recipientPhone: '',
+        deliveryAddress: '',
+        deliveryCity: '',
+        deliveryCountry: '',
+        serviceType: 'standard'
+      });
+      setPhoneValue('');
+      return;
+    }
+
+    const recipient = savedRecipients.find(r => r.id === recipientId);
+    if (recipient) {
+      setFormData({
+        recipientName: recipient.recipient_name,
+        recipientPhone: recipient.recipient_phone || '',
+        deliveryAddress: recipient.delivery_address,
+        deliveryCity: recipient.delivery_city,
+        deliveryCountry: recipient.delivery_country,
+        serviceType: recipient.service_type || 'standard'
+      });
+      setPhoneValue(recipient.recipient_phone || '');
+    }
+  };
+
+  /**
+   * Save recipient details after successful shipment creation
+   */
+  const saveRecipientAfterShipment = async () => {
+    if (!user?.id || !saveRecipientOnSubmit) return;
+
+    // Validate required fields
+    if (!formData.recipientName || !formData.deliveryAddress || !formData.deliveryCity || !formData.deliveryCountry) {
+      console.log('Skipping recipient save - missing required fields');
+      return;
+    }
+
+    // Generate automatic nickname if not provided
+    const autoNickname = recipientNickname.trim() || 
+      `${formData.recipientName} - ${formData.deliveryCity}`;
+
+    try {
+      const { data, error } = await supabase.rpc('save_recipient', {
+        p_user_id: user.id,
+        p_nickname: autoNickname,
+        p_recipient_name: formData.recipientName,
+        p_recipient_phone: formData.recipientPhone || null,
+        p_delivery_address: formData.deliveryAddress,
+        p_delivery_city: formData.deliveryCity,
+        p_delivery_country: formData.deliveryCountry,
+        p_service_type: formData.serviceType,
+        p_is_default: saveAsDefault
+      });
+
+      if (error) {
+        console.error('Error saving recipient:', error);
+        return;
+      }
+
+      if (data && !data.success) {
+        console.error('Failed to save recipient:', data.error);
+        return;
+      }
+
+      // Refresh saved recipients list
+      await fetchSavedRecipients();
+      
+      console.log('✅ Recipient saved successfully:', autoNickname);
+    } catch (err: any) {
+      console.error('Error saving recipient:', err);
+    }
+  };
+
+  /**
+   * Delete a saved recipient
+   */
+  const handleDeleteRecipient = async (recipientId: string) => {
+    if (!user?.id) return;
+    if (!confirm('Are you sure you want to delete this saved recipient?')) return;
+
+    try {
+      const { data, error } = await supabase.rpc('delete_saved_recipient', {
+        p_recipient_id: recipientId,
+        p_user_id: user.id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Failed to delete recipient');
+      }
+
+      setSuccess('Recipient deleted successfully!');
+      
+      // Clear selection if deleted recipient was selected
+      if (selectedRecipientId === recipientId) {
+        setSelectedRecipientId('');
+        setFormData({
+          recipientName: '',
+          recipientPhone: '',
+          deliveryAddress: '',
+          deliveryCity: '',
+          deliveryCountry: '',
+          serviceType: 'standard'
+        });
+        setPhoneValue('');
+      }
+      
+      // Refresh saved recipients list
+      await fetchSavedRecipients();
+    } catch (err: any) {
+      console.error('Error deleting recipient:', err);
+      setError('Failed to delete recipient: ' + err.message);
+    }
   };
 
   /**
@@ -321,6 +480,26 @@ const CreateShipment: React.FC = () => {
       setCreatedShipmentId(data.shipment_id);
       setCreatedTrackingNumber(data.tracking_number);
       setCreatedPackageCount(selectedPackages.size);
+
+      // Track recipient usage if a saved recipient was used
+      if (selectedRecipientId && user?.id) {
+        try {
+          await supabase.rpc('mark_recipient_used', {
+            p_recipient_id: selectedRecipientId,
+            p_user_id: user.id
+          });
+          // Refresh saved recipients to update usage count
+          await fetchSavedRecipients();
+        } catch (err) {
+          console.error('Error tracking recipient usage:', err);
+          // Non-critical error, continue
+        }
+      }
+
+      // Save recipient if toggle is enabled
+      if (saveRecipientOnSubmit) {
+        await saveRecipientAfterShipment();
+      }
       
       // Generate individual package receipts first, then shipment receipt
       try {
@@ -358,6 +537,10 @@ const CreateShipment: React.FC = () => {
 
       // Reset form
       setSelectedPackages(new Set());
+      setSelectedRecipientId('');
+      setSaveRecipientOnSubmit(false);
+      setRecipientNickname('');
+      setSaveAsDefault(false);
       setFormData({
         recipientName: '',
         recipientPhone: '',
@@ -366,6 +549,7 @@ const CreateShipment: React.FC = () => {
         deliveryCountry: '',
         serviceType: 'standard'
       });
+      setPhoneValue('');
 
       // Refresh the packages list
       fetchReceivedPackages();
@@ -661,6 +845,43 @@ const CreateShipment: React.FC = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Saved Recipients Section */}
+              {savedRecipients.length > 0 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+                  <h3 className="text-md font-bold text-gray-900 flex items-center gap-2 mb-3">
+                    <FiBookmark className="w-5 h-5 text-blue-600" />
+                    Saved Recipients
+                  </h3>
+                  
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedRecipientId}
+                      onChange={(e) => handleRecipientSelect(e.target.value)}
+                      className="flex-1 px-4 py-2.5 border-2 border-blue-200 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white hover:border-blue-300"
+                    >
+                      <option value="">✏️ Enter manually...</option>
+                      {savedRecipients.map((recipient) => (
+                        <option key={recipient.id} value={recipient.id}>
+                          {recipient.is_default ? '⭐ ' : ''}{recipient.nickname} - {recipient.recipient_name} ({recipient.delivery_city}, {recipient.delivery_country})
+                          {recipient.usage_count > 0 ? ` • Used ${recipient.usage_count}x` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {selectedRecipientId && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRecipient(selectedRecipientId)}
+                        className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                        title="Delete this saved recipient"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Recipient Information */}
               <div>
                 <h3 className="text-md font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -841,6 +1062,68 @@ const CreateShipment: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Save Recipient Toggle */}
+              {!selectedRecipientId && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setSaveRecipientOnSubmit(!saveRecipientOnSubmit)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                          saveRecipientOnSubmit ? 'bg-green-600' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            saveRecipientOnSubmit ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-bold text-gray-900 cursor-pointer" onClick={() => setSaveRecipientOnSubmit(!saveRecipientOnSubmit)}>
+                        <FiSave className="inline w-4 h-4 mr-1" />
+                        Save this recipient for future use
+                      </label>
+                      <p className="text-xs text-gray-600 mt-1">
+                        When enabled, recipient details will be saved after creating the shipment
+                      </p>
+                      
+                      {saveRecipientOnSubmit && (
+                        <div className="mt-3 space-y-3">
+                          <div>
+                            <label htmlFor="saveNickname" className="block text-xs font-semibold text-gray-700 mb-1">
+                              Nickname (optional)
+                            </label>
+                            <input
+                              type="text"
+                              id="saveNickname"
+                              value={recipientNickname}
+                              onChange={(e) => setRecipientNickname(e.target.value)}
+                              placeholder={`Auto: ${formData.recipientName || 'Recipient'} - ${formData.deliveryCity || 'City'}`}
+                              className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm text-gray-900 placeholder-gray-400"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="saveAsDefaultInline"
+                              checked={saveAsDefault}
+                              onChange={(e) => setSaveAsDefault(e.target.checked)}
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            />
+                            <label htmlFor="saveAsDefaultInline" className="text-xs text-gray-700">
+                              ⭐ Set as default recipient
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="pt-6 border-t-2 border-gray-100">
