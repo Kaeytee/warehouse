@@ -430,20 +430,10 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
 
           {waybill && (
             <div ref={printRef} className="waybill-container">
-              {/* Header Section */}
-              <div className="header text-center border-b-4 border-red-600 pb-6 mb-8">
-                <h1 className="text-3xl font-bold text-red-600 mb-2">SHIPPING WAYBILL</h1>
-                <p className="text-gray-600 text-lg font-semibold">{waybill.warehouse_info.name}</p>
-                <p className="text-gray-500">{waybill.warehouse_info.contact}</p>
-                <div className="mt-4 text-xl font-bold text-gray-800">
-                  Tracking: {waybill.shipment_details.tracking_number}
-                </div>
-              </div>
-
               {/* Shipment Details */}
               <div className="section bg-gray-50 p-4 rounded-lg mb-6">
                 <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
-                  <FiSend />
+                  
                   Shipment Information
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -496,7 +486,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
               {/* Receiver Information */}
               <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
                 <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
-                  <FiMapPin />
+                  
                   Receiver Information
                 </div>
                 <div className="space-y-2">
@@ -526,7 +516,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
               {/* Package List */}
               <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
                 <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
-                  <FiPackage />
+                  
                   Package List ({waybill.packages.length} items)
                 </div>
                 <table className="packages-table w-full border-collapse">
