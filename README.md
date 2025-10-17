@@ -266,7 +266,7 @@ Proprietary - © 2025 Vanguard Cargo. All rights reserved.
 
 ## Version
 
-**Current Version:** 1.0.1
+**Current Version:** 1.0.3
 
 ### Recent Updates
 - ✅ Complete authentication system with role-based access
@@ -281,6 +281,8 @@ Proprietary - © 2025 Vanguard Cargo. All rights reserved.
 - ✅ Inventory total weight calculation now excludes delivered packages
 - ✅ **NEW:** Saved Recipients feature - Save and reuse recipient details when creating shipments
 - ✅ **FIXED:** Shipment status now correctly updates to 'delivered' when all packages are delivered (v1.0.1 - 2025-10-17)
+- ✅ **FIXED:** Estimated delivery date now always shows on waybills (3 days from creation) - no more "N/A" (v1.0.2 - 2025-10-17)
+- ✅ **FIXED:** Waybills now auto-generate and display barcode and QR code when printing (v1.0.3 - 2025-10-17)
 
 ---
 

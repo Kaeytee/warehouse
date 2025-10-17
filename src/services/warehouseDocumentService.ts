@@ -156,6 +156,7 @@ class WarehouseDocumentService {
   /**
    * Generate waybill for shipment
    * Creates comprehensive waybill document with all shipment details
+   * Automatically generates barcode and QR code if not present
    */
   async generateWaybill(
     shipmentId: string,
@@ -163,6 +164,37 @@ class WarehouseDocumentService {
   ): Promise<WaybillData> {
     try {
       logger.info('Generating waybill:', { shipmentId, userId });
+
+      // Get shipment tracking number first
+      const { data: shipment, error: shipmentError } = await supabase
+        .from('shipments')
+        .select('tracking_number, barcode_data, qr_code_data')
+        .eq('id', shipmentId)
+        .single();
+
+      if (shipmentError) {
+        throw shipmentError;
+      }
+
+      // Generate barcode and QR code if not already present
+      if (!shipment.barcode_data || !shipment.qr_code_data) {
+        // Dynamically import barcode generator singleton
+        const barcodeQRGeneratorModule = await import('../utils/barcodeQRGenerator');
+        const generator = barcodeQRGeneratorModule.default;
+        
+        // Generate codes
+        const codes = await generator.generateShipmentCodes(shipment.tracking_number);
+        
+        // Store codes in database
+        await this.storeShipmentCodes(
+          shipmentId,
+          codes.barcode.dataUrl,
+          codes.qrCode.dataUrl,
+          userId
+        );
+        
+        logger.info('Generated and stored barcode/QR code for shipment:', { shipmentId });
+      }
 
       // Call database function to generate waybill
       const { data, error } = await supabase.rpc('generate_waybill', {

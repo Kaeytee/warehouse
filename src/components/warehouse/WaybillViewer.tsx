@@ -308,7 +308,32 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
   // ========================================
 
   /**
-   * Format date for display
+   * Calculate estimated delivery date (3 days from creation)
+   * Used as fallback when estimated_delivery is null
+   */
+  const calculateEstimatedDelivery = (createdAt: string): string => {
+    const deliveryDate = new Date(createdAt);
+    deliveryDate.setDate(deliveryDate.getDate() + 3);
+    return deliveryDate.toISOString();
+  };
+
+  /**
+   * Get estimated delivery date with fallback calculation
+   * Returns estimated_delivery if available, otherwise calculates 3 days from creation
+   */
+  const getEstimatedDelivery = (): string => {
+    if (waybill?.shipment_details.estimated_delivery) {
+      return waybill.shipment_details.estimated_delivery;
+    }
+    // Fallback: calculate 3 days from creation date
+    if (waybill?.shipment_details.created_at) {
+      return calculateEstimatedDelivery(waybill.shipment_details.created_at);
+    }
+    return '';
+  };
+
+  /**
+   * Format date for display (date and time)
    * Converts ISO date string to readable format
    */
   const formatDate = (dateString: string | null): string => {
@@ -440,7 +465,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                   </div>
                   <div className="info-row">
                     <span className="info-label text-gray-600">Est. Delivery:</span>
-                    <span className="info-value">{formatDate(waybill.shipment_details.estimated_delivery)}</span>
+                    <span className="info-value">{formatDate(getEstimatedDelivery())}</span>
                   </div>
                 </div>
               </div>

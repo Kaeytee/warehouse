@@ -297,6 +297,17 @@ class WarehouseShipmentService {
   }
 
   /**
+   * Calculate estimated delivery date (always 3 business days from creation)
+   * @returns ISO date string for estimated delivery
+   */
+  private calculateEstimatedDelivery(): string {
+    const deliveryDate = new Date();
+    // Add 3 days (business days consideration - simple implementation adds 3 calendar days)
+    deliveryDate.setDate(deliveryDate.getDate() + 3);
+    return deliveryDate.toISOString();
+  }
+
+  /**
    * Create new shipment from packages
    */
   async createShipment(
@@ -336,6 +347,9 @@ class WarehouseShipmentService {
 
       // Generate shipment number
       const shipment_number = await this.generateShipmentNumber();
+      
+      // Calculate estimated delivery (always 3 days from creation)
+      const estimated_delivery = this.calculateEstimatedDelivery();
 
       // Create shipment
       const { data: newShipment, error: shipmentError } = await supabase
@@ -355,6 +369,7 @@ class WarehouseShipmentService {
           total_declared_value,
           total_packages,
           status: 'pending',
+          estimated_delivery,
           is_express: shipmentData.is_express || false,
           is_insured: shipmentData.is_insured || false,
         })
