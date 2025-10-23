@@ -70,7 +70,7 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         incomingRequests: true,
         createShipment: true,
         shipmentHistory: false, // No access to shipment history
-        staffManagement: false,
+        staffManagement: true, // Allow warehouse_admin to access user management
         analysisReport: false, // No access to analytics
         inventory: true,
       };
