@@ -18,6 +18,7 @@ import Inventory from './app/pages/Inventory/Inventory';
 import About from './app/pages/About/About';
 import UserManagement from './app/pages/UserManagement/UserManagement';
 import Reports from './app/pages/Reports/Reports';
+import RecipientsManagement from './app/pages/Recipients/RecipientsManagement';
 import RouteGuard from './components/RouteGuard';
 import UnauthorizedPage from './components/UnauthorizedPage';
 
@@ -163,6 +164,16 @@ const AppRoutes: React.FC = () => {
           element={
             <RouteGuard requiredPermission="user_management">
               <UserManagement />
+            </RouteGuard>
+          } 
+        />
+        
+        {/* Recipients Management - All warehouse roles */}
+        <Route 
+          path="/recipients" 
+          element={
+            <RouteGuard requiredPermission="shipment_creation">
+              <RecipientsManagement />
             </RouteGuard>
           } 
         />
