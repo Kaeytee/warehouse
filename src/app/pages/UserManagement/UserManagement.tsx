@@ -25,6 +25,7 @@ import {
 } from 'react-icons/fi';
 import { UserManagementService, type User, type UserStats } from '../../../services/UserManagementService';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
+import DeactivationReasonModal from '../../../components/modals/DeactivationReasonModal';
 
 /**
  * User Management Component
@@ -40,7 +41,7 @@ import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
  */
 const UserManagement: React.FC = () => {
   // Authentication and user context
-  const { isAuthenticated } = useWarehouseAuth();
+  const { isAuthenticated, user: currentUser } = useWarehouseAuth();
 
   // State management for user data
   const [users, setUsers] = useState<User[]>([]);
@@ -57,6 +58,15 @@ const UserManagement: React.FC = () => {
 
   // Action states
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  // Modal state for warehouse_admin deactivation requests
+  const [deactivationModal, setDeactivationModal] = useState<{
+    isOpen: boolean;
+    targetUser: User | null;
+  }>({
+    isOpen: false,
+    targetUser: null
+  });
 
   /**
    * Load all users and statistics from database
@@ -118,8 +128,28 @@ const UserManagement: React.FC = () => {
 
   /**
    * Handle user status update (activate/deactivate)
+   * 
+   * For warehouse_admin: Deactivation requires approval - shows modal
+   * For admin/superadmin: Direct deactivation allowed
    */
   const handleStatusUpdate = async (userId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser) return;
+
+    // Check if warehouse_admin is trying to deactivate
+    const isWarehouseAdmin = currentUser?.role === 'warehouse_admin';
+    const isDeactivating = newStatus === 'inactive' || newStatus === 'suspended';
+
+    if (isWarehouseAdmin && isDeactivating) {
+      // Show modal for warehouse_admin deactivation request
+      setDeactivationModal({
+        isOpen: true,
+        targetUser
+      });
+      return;
+    }
+
+    // For activation or if user is admin/superadmin, proceed directly
     try {
       setUpdatingUserId(userId);
 
@@ -135,6 +165,31 @@ const UserManagement: React.FC = () => {
     } finally {
       setUpdatingUserId(null);
     }
+  };
+
+  /**
+   * Handle deactivation request submission from modal
+   * Sends notification to support team
+   */
+  const handleDeactivationRequest = async (reason: string) => {
+    if (!deactivationModal.targetUser || !currentUser) {
+      throw new Error('Missing required information');
+    }
+
+    const result = await UserManagementService.notifySupportForDeactivation(
+      currentUser.id,
+      deactivationModal.targetUser.id,
+      reason
+    );
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to send request');
+    }
+
+    // Show success message
+    setError(null);
+    // You could add a success toast/notification here
+    alert('✅ Request sent to support team successfully! They will review and take action.');
   };
 
   // Load users on component mount
@@ -464,7 +519,11 @@ const UserManagement: React.FC = () => {
                               onClick={() => handleStatusUpdate(user.id, 'inactive')}
                               disabled={updatingUserId === user.id}
                               className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                              title="Deactivate user"
+                              title={
+                                currentUser?.role === 'warehouse_admin'
+                                  ? 'Request deactivation (requires approval)'
+                                  : 'Deactivate user'
+                              }
                             >
                               <FiXCircle className="h-5 w-5" />
                             </button>
@@ -496,6 +555,17 @@ const UserManagement: React.FC = () => {
           Showing {filteredUsers.length} of {users.length} users
         </div>
       </div>
+
+      {/* Deactivation Reason Modal for warehouse_admin */}
+      {deactivationModal.isOpen && deactivationModal.targetUser && (
+        <DeactivationReasonModal
+          isOpen={deactivationModal.isOpen}
+          onClose={() => setDeactivationModal({ isOpen: false, targetUser: null })}
+          onSubmit={handleDeactivationRequest}
+          userName={UserManagementService.formatUserName(deactivationModal.targetUser)}
+          userEmail={deactivationModal.targetUser.email}
+        />
+      )}
     </div>
   );
 };

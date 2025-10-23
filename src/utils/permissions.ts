@@ -139,6 +139,11 @@ export function getAllowedNavItems(userRole: string) {
     navItems.push({ path: '/create-shipment', name: 'Create Shipment', icon: 'FiSend' });
   }
 
+  // Recipients Management - all roles with shipment_creation permission
+  if (rolePermissions.includes('shipment_creation')) {
+    navItems.push({ path: '/recipients', name: 'Recipients', icon: 'FiBookmark' });
+  }
+
   // Delivery - all roles with package_management permission
   if (rolePermissions.includes('package_management')) {
     navItems.push({ path: '/delivery', name: 'Delivery', icon: 'FiTruck' });

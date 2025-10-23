@@ -310,4 +310,55 @@ export class UserManagementService {
 
     return colorMap[status] || 'bg-gray-100 text-gray-800 border-gray-200';
   }
+
+  /**
+   * Send deactivation request to support team
+   * 
+   * This method is used when warehouse_admin attempts to deactivate a user.
+   * It sends an email notification to the support team with admin details
+   * and the reason for deactivation request.
+   * 
+   * @param adminId - ID of the admin requesting deactivation
+   * @param targetUserId - ID of the user to be deactivated
+   * @param reason - Detailed reason for deactivation request
+   * @returns Promise with success status
+   */
+  static async notifySupportForDeactivation(
+    adminId: string,
+    targetUserId: string,
+    reason: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'notify-support-user-deactivation',
+        {
+          body: {
+            adminId,
+            targetUserId,
+            reason
+          }
+        }
+      );
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to send notification to support');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to send notification');
+      }
+
+      return {
+        success: true,
+        message: 'Support team has been notified. Your request will be reviewed shortly.'
+      };
+    } catch (error) {
+      console.error('Error notifying support:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to notify support team'
+      };
+    }
+  }
 }

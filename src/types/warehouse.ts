@@ -381,7 +381,8 @@ export const ROLE_PERMISSIONS: Record<WarehouseRole, WarehousePermission[]> = {
     'package_intake',
     'package_management',
     'shipment_creation',
-    'analytics_view' // Dashboard access only, no analytics_report
+    'analytics_view', // Dashboard access only, no analytics_report
+    'user_management' // Allow warehouse_admin to access user management
   ],
   admin: [
     'package_intake',
