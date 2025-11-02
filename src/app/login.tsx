@@ -3,7 +3,6 @@ import { useWarehouseAuth } from '../hooks/useWarehouseAuth';
 import { useNavigate } from 'react-router-dom';
 import { BsPerson, BsLock } from 'react-icons/bs';
 import image from '../assets/logo.png';
-  
 /**
  * Warehouse Login Component - Database Role-Based Authentication
  */
