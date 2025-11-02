@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWarehouseAuth } from '../hooks/useWarehouseAuth';
 import { useNavigate } from 'react-router-dom';
 import { BsPerson, BsLock } from 'react-icons/bs';
-import image from '../assets/logo.png';
+import { LOGIN_BACKGROUND } from '../config/branding';
 /**
  * Warehouse Login Component - Database Role-Based Authentication
  */
@@ -112,7 +112,7 @@ const Login = () => {
             {/* Container ship illustration */}
             <div className="relative w-full h-full flex items-center justify-center">
               <img 
-                src={image}
+                src={LOGIN_BACKGROUND}
                 alt="Container ship at port with cranes"
                 className="w-full h-full object-cover rounded-l-3xl"
               />

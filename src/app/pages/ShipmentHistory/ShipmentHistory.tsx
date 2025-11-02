@@ -4,7 +4,7 @@ import { warehouseShipmentService, type ShipmentData, type ShipmentStatus } from
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import WaybillViewer from '../../../components/warehouse/WaybillViewer';
 import { warehouseDocumentService } from '../../../services/warehouseDocumentService';
-import logo from '../../../assets/image.png';
+import { LOGO, COMPANY_INFO, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../../config/branding';
 
 /**
  * Shipment interface matching the backend data structure
@@ -317,18 +317,18 @@ const ShipmentHistory: React.FC = () => {
                 </style>
               </head>
               <body>
-                <div class="watermark">VANGUARDCARGO</div>
+                <div class="watermark">${WATERMARK_TEXT}</div>
                 <div class="receipt">
                   <div class="header">
                     <div class="header-left">
-                      <img src="${logo}" alt="VanguardCargo LLC" />
+                      <img src="${LOGO}" alt="${COMPANY_INFO.name}" />
                     </div>
                     <div class="header-right">
-                      <h1>VANGUARD CARGO LLC</h1>
-                      <p>4700 Eisenhower Avenue ALX-E2</p>
-                      <p>Alexandria, VA 22304, USA</p>
-                      <p>Email: info@vanguardcargo.co</p>
-                      <p>Phone: 0303982320 | +233 544197819</p>
+                      <h1>${COMPANY_INFO.name}</h1>
+                      <p>${COMPANY_INFO.address}</p>
+                      <p>${COMPANY_INFO.city}, ${COMPANY_INFO.state} ${COMPANY_INFO.zipCode}, ${COMPANY_INFO.country}</p>
+                      <p>Email: ${COMPANY_INFO.email}</p>
+                      <p>${COMPANY_PHONES_SHORT}</p>
                     </div>
                   </div>
                   

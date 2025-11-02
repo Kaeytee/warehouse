@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fi';
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import { supabase } from '../../../lib/supabase';
-import logo from '../../../assets/image.png';
+import { LOGO } from '../../../config/branding';
 
 // ============================================================================
 // TYPE DEFINITIONS

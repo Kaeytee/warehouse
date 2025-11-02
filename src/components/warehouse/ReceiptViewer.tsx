@@ -11,7 +11,7 @@
 import React, { useRef } from 'react';
 import { FiPrinter, FiX } from 'react-icons/fi';
 import type { ReceiptData } from '../../services/warehouseDocumentService';
-import logo from '../../assets/image.png';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
 
 // ============================================================================
 // COMPONENT PROPS INTERFACE
@@ -310,7 +310,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
               </style>
             </head>
             <body>
-              <div class="watermark">VANGUARDCARGO</div>
+              <div class="watermark">${WATERMARK_TEXT}</div>
               ${printRef.current.innerHTML}
               <script>
                 window.onload = function() {
@@ -411,21 +411,21 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
             {/* Header */}
             <div className="header text-center mb-6" style={{ position: 'relative', zIndex: 1 }}>
               {/* Company Logo */}
-              <img src={logo} alt="VanguardCargo Logo" className="company-logo" />
+              <img src={LOGO} alt={`${COMPANY_INFO.name} Logo`} className="company-logo" />
               
               {/* Company Information */}
               <div className="company-info">
                 <h1 className="company-name">
-                  VANGUARD CARGO LLC
+                  {COMPANY_INFO.name}
                 </h1>
                 <p className="company-address">
-                  4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA
+                  {COMPANY_ADDRESS_SINGLE_LINE}
                 </p>
                 <p className="company-address">
-                  Email: support@vanguardcargo.co
+                  Email: {COMPANY_INFO.supportEmail}
                 </p>
                 <p className="company-address">
-                  Phone: 0303982320 | +233 544197819
+                  {COMPANY_PHONES_SHORT}
                 </p>
               </div>
               
@@ -594,17 +594,17 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
 
             {/* Footer */}
             <div className="footer" style={{ position: 'relative', zIndex: 1 }}>
-              <p className="font-bold mb-2" style={{ fontWeight: 'bold', marginBottom: '0.5em' }}>Thank you for choosing VanguardCargo!</p>
+              <p className="font-bold mb-2" style={{ fontWeight: 'bold', marginBottom: '0.5em' }}>Thank you for choosing {COMPANY_INFO.name}!</p>
               <p className="text-xs" style={{ fontSize: '0.75em' }}>
                 This is an official receipt. Please keep for your records.
               </p>
               <p className="text-xs mt-2" style={{ fontSize: '0.75em', marginTop: '0.5em' }}>
-                <strong>VANGUARD CARGO LLC</strong><br/>
-                4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA<br/>
-                Email: support@vanguardcargo.co | Phone: 0303982320 | +233 544197819
+                <strong>{COMPANY_INFO.name}</strong><br/>
+                {COMPANY_ADDRESS_SINGLE_LINE}<br/>
+                Email: {COMPANY_INFO.supportEmail} | {COMPANY_PHONES_SHORT}
               </p>
               <p className="text-xs mt-4" style={{ fontSize: '0.75em', marginTop: '1em' }}>
-                © 2025 VanguardCargo. All rights reserved.
+                © 2025 {COMPANY_INFO.name}. All rights reserved.
               </p>
             </div>
           </div>

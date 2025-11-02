@@ -18,7 +18,7 @@ import WaybillViewer from './WaybillViewer';
 import { warehouseDocumentService } from '../../services/warehouseDocumentService';
 import type { ConsolidatedShipmentDetails } from '../../services/warehouseDocumentService';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
-import logo from '../../assets/image.png';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
 import JSZip from 'jszip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -184,18 +184,18 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
                 </style>
               </head>
               <body>
-                <div class="watermark">VANGUARDCARGO</div>
+                <div class="watermark">${WATERMARK_TEXT}</div>
                 <div class="receipt">
                   <div class="header">
                     <div class="header-left">
-                      <img src="${logo}" alt="VanguardCargo LLC" />
+                      <img src="${LOGO}" alt="${COMPANY_INFO.name}" />
                     </div>
                     <div class="header-right">
-                      <h1>VANGUARD CARGO LLC</h1>
-                      <p>4700 Eisenhower Avenue ALX-E2</p>
-                      <p>Alexandria, VA 22304, USA</p>
-                      <p>Email: info@vanguardcargo.co</p>
-                      <p>Phone: 0303982320 | +233 544197819</p>
+                      <h1>${COMPANY_INFO.name}</h1>
+                      <p>${COMPANY_INFO.address}</p>
+                      <p>${COMPANY_INFO.city}, ${COMPANY_INFO.state} ${COMPANY_INFO.zipCode}, ${COMPANY_INFO.country}</p>
+                      <p>Email: ${COMPANY_INFO.email}</p>
+                      <p>${COMPANY_PHONES_SHORT}</p>
                     </div>
                   </div>
                   
@@ -263,8 +263,8 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
                   
                   <div class="footer">
                     <p><strong>Generated:</strong> ${new Date(item.receipt.generated_at).toLocaleString()}</p>
-                    <p style="margin-top: 10px;">This is an official receipt from VanguardCargo Warehouse</p>
-                    <p>© 2025 VanguardCargo. All rights reserved.</p>
+                    <p style="margin-top: 10px;">This is an official receipt from ${COMPANY_INFO.name} Warehouse</p>
+                    <p>© 2025 ${COMPANY_INFO.name}. All rights reserved.</p>
                   </div>
                 </div>
                 
@@ -454,18 +454,18 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
   </style>
 </head>
 <body>
-  <div class="watermark">VANGUARDCARGO</div>
+  <div class="watermark">${WATERMARK_TEXT}</div>
   <div class="container">
     <div class="content">
       <div class="header">
         <div class="header-flex">
           <div class="logo-cell">
-            <img src="${logo}" alt="VanguardCargo Logo" class="logo" />
+            <img src="${LOGO}" alt="${COMPANY_INFO.name} Logo" class="logo" />
           </div>
           <div class="title-cell">
-            <h1>VANGUARD CARGO LLC</h1>
-            <p class="company-info">4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA</p>
-            <p class="company-info">Email: info@vanguardcargo.co | Phone: 0303982320 | +233 544197819</p>
+            <h1>${COMPANY_INFO.name}</h1>
+            <p class="company-info">${COMPANY_ADDRESS_SINGLE_LINE}</p>
+            <p class="company-info">Email: ${COMPANY_INFO.email} | ${COMPANY_PHONES_SHORT}</p>
           </div>
         </div>
         <div style="text-align: center;">
@@ -599,10 +599,10 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
   <div class="container">
     <div class="content">
       <div class="header">
-        <img src="${logo}" alt="VanguardCargo Logo" class="logo" />
-        <h1>VANGUARD CARGO LLC</h1>
-        <p class="company-info">4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA</p>
-        <p class="company-info">Email: info@vanguardcargo.co | Phone: 0303982320 | +233 544197819</p>
+        <img src="${LOGO}" alt="${COMPANY_INFO.name} Logo" class="logo" />
+        <h1>${COMPANY_INFO.name}</h1>
+        <p class="company-info">${COMPANY_ADDRESS_SINGLE_LINE}</p>
+        <p class="company-info">Email: ${COMPANY_INFO.email} | ${COMPANY_PHONES_SHORT}</p>
         <h2>Package Intake Receipt</h2>
         <span class="receipt-number">Receipt #: ${receipt.receipt_number || data.receipt_number}</span>
       </div>
@@ -785,10 +785,10 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
           {/* Print Header (visible only in print) */}
           <div className="print-header hidden">
             <div>
-              <img src={logo} alt="VanguardCargo LLC" className="print-logo" />
+              <img src={LOGO} alt={COMPANY_INFO.name} className="print-logo" />
             </div>
             <div style={{textAlign: 'right'}}>
-              <h1 style={{fontSize: '24px', fontWeight: 'bold', color: '#dc2626', margin: 0}}>VANGUARD CARGO LLC</h1>
+              <h1 style={{fontSize: '24px', fontWeight: 'bold', color: '#dc2626', margin: 0}}>{COMPANY_INFO.name}</h1>
               <p style={{margin: '5px 0', fontSize: '12px'}}>4700 Eisenhower Avenue ALX-E2</p>
               <p style={{margin: '5px 0', fontSize: '12px'}}>Alexandria, VA 22304, USA</p>
               <p style={{margin: '5px 0', fontSize: '12px'}}>Email: info@vanguardcargo.co</p>
@@ -938,7 +938,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
                   {/* Sender Info - VanguardCargo */}
                   <div className="border border-red-200 rounded-lg p-5 bg-red-50">
                     <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
-                      <img src={logo} alt="VanguardCargo" className="w-8 h-8 object-contain" />
+                      <img src={LOGO} alt={COMPANY_INFO.name} className="w-8 h-8 object-contain" />
                       Sender Information
                     </h3>
                     <div className="space-y-2">

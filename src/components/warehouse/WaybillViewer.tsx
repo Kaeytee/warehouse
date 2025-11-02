@@ -13,7 +13,7 @@ import { FiPrinter, FiDownload, FiX, FiPackage } from 'react-icons/fi';
 import { warehouseDocumentService } from '../../services/warehouseDocumentService';
 import type { WaybillData } from '../../services/warehouseDocumentService';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
-import logo from '../../assets/image.png';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
 
 // ============================================================================
 // COMPONENT PROPS INTERFACE
@@ -260,17 +260,17 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
               </style>
             </head>
             <body>
-              <div class="watermark">VANGUARDCARGO</div>
+              <div class="watermark">${WATERMARK_TEXT}</div>
               <div class="brand-header">
                 <div class="brand-header-left">
-                  <img src="${logo}" alt="VanguardCargo LLC" />
+                  <img src="${LOGO}" alt="${COMPANY_INFO.name}" />
                 </div>
                 <div class="brand-header-right">
-                  <h1>VANGUARD CARGO LLC</h1>
-                  <p>4700 Eisenhower Avenue ALX-E2</p>
-                  <p>Alexandria, VA 22304, USA</p>
-                  <p>Email: info@vanguardcargo.co</p>
-                  <p>Phone: 0303982320 | +233 544197819</p>
+                  <h1>${COMPANY_INFO.name}</h1>
+                  <p>${COMPANY_INFO.address}</p>
+                  <p>${COMPANY_INFO.city}, ${COMPANY_INFO.state} ${COMPANY_INFO.zipCode}, ${COMPANY_INFO.country}</p>
+                  <p>Email: ${COMPANY_INFO.email}</p>
+                  <p>${COMPANY_PHONES_SHORT}</p>
                 </div>
               </div>
               ${printRef.current.innerHTML}
@@ -359,10 +359,10 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <img src={logo} alt="Vanguard Cargo LLC" className="h-12 w-12 object-contain" />
+            <img src={LOGO} alt={COMPANY_INFO.name} className="h-12 w-12 object-contain" />
             <div>
               <h2 className="text-2xl font-bold">Digital Waybill</h2>
-              <p className="text-xs text-red-100 mt-1">VANGUARD CARGO LLC</p>
+              <p className="text-xs text-red-100 mt-1">{COMPANY_INFO.name}</p>
             </div>
           </div>
           
@@ -470,7 +470,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                   </div>
                   <div className="info-row">
                     <span className="info-label text-gray-600">Address:</span>
-                    <span className="info-value">{waybill.sender.address || '4700 Eisenhower Avenue ALX-E2, Alexandria, VA 22304, USA'}</span>
+                    <span className="info-value">{waybill.sender.address || COMPANY_ADDRESS_SINGLE_LINE}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label text-gray-600">Email:</span>
@@ -564,7 +564,7 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
               {/* Footer */}
               <div className="footer text-center mt-8 pt-6 border-t-2 border-red-600 text-gray-600 text-sm">
                 <p className="mb-2">Generated on {formatDate(waybill.generated_at)}</p>
-                <p>© 2025 VanguardCargo Warehouse. All rights reserved.</p>
+                <p>© 2025 {COMPANY_INFO.name} Warehouse. All rights reserved.</p>
                 <p className="mt-2 text-xs">This is an official shipping document. Handle with care.</p>
               </div>
             </div>

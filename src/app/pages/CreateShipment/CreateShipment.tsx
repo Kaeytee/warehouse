@@ -6,7 +6,7 @@ import { warehouseDocumentService } from '../../../services/warehouseDocumentSer
 import WaybillViewer from '../../../components/warehouse/WaybillViewer';
 import ReceiptViewer from '../../../components/warehouse/ReceiptViewer';
 import ConsolidatedShipmentView from '../../../components/warehouse/ConsolidatedShipmentView';
-import logo from '../../../assets/image.png';
+import { LOGO } from '../../../config/branding';
 import PhoneInput, { parsePhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
@@ -603,7 +603,7 @@ const CreateShipment: React.FC = () => {
           <div className="mb-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-2xl p-6 shadow-xl shadow-green-200/50 animate-in slide-in-from-top duration-500">
             <div className="flex items-center gap-4 mb-6">
               <div className="p-3 bg-white rounded-2xl shadow-lg">
-                <img src={logo} alt="Vanguard Cargo LLC" className="h-16 w-16 object-contain" />
+                <img src={LOGO} alt="Vanguard Cargo LLC" className="h-16 w-16 object-contain" />
               </div>
               <div className="flex-1">
                 <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
