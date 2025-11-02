@@ -18,7 +18,7 @@ import WaybillViewer from './WaybillViewer';
 import { warehouseDocumentService } from '../../services/warehouseDocumentService';
 import type { ConsolidatedShipmentDetails } from '../../services/warehouseDocumentService';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
-import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT, DOCUMENT_SETTINGS } from '../../config/branding';
 import JSZip from 'jszip';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -264,7 +264,7 @@ export const ConsolidatedShipmentView: React.FC<ConsolidatedShipmentViewProps> =
                   <div class="footer">
                     <p><strong>Generated:</strong> ${new Date(item.receipt.generated_at).toLocaleString()}</p>
                     <p style="margin-top: 10px;">This is an official receipt from ${COMPANY_INFO.name} Warehouse</p>
-                    <p>© 2025 ${COMPANY_INFO.name}. All rights reserved.</p>
+                    <p>${DOCUMENT_SETTINGS.copyrightText}</p>
                   </div>
                 </div>
                 

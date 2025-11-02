@@ -13,7 +13,7 @@ import { FiPrinter, FiDownload, FiX, FiPackage } from 'react-icons/fi';
 import { warehouseDocumentService } from '../../services/warehouseDocumentService';
 import type { WaybillData } from '../../services/warehouseDocumentService';
 import { useWarehouseAuth } from '../../hooks/useWarehouseAuth';
-import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT, DOCUMENT_SETTINGS } from '../../config/branding';
 
 // ============================================================================
 // COMPONENT PROPS INTERFACE
@@ -250,12 +250,25 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                   color: #666;
                   font-size: 0.75em;
                 }
+                .page-break {
+                  page-break-before: always;
+                  margin-top: 2em;
+                }
+                .page-1-content {
+                  page-break-after: always;
+                }
                 @media print {
                   @page { margin: 1cm; }
                   body { margin: 0 !important; padding: 0.5cm; }
                   html, body { margin: 0 !important; padding: 0 !important; }
                   .no-print { display: none; }
                   img { max-width: 100%; height: auto; }
+                  .page-break {
+                    page-break-before: always;
+                  }
+                  .page-1-content {
+                    page-break-after: always;
+                  }
                 }
               </style>
             </head>
@@ -430,35 +443,32 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
 
           {waybill && (
             <div ref={printRef} className="waybill-container">
-              {/* Shipment Details */}
-              <div className="section bg-gray-50 p-4 rounded-lg mb-6">
-                <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
-                  
-                  Shipment Information
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="info-row">
-                    <span className="info-label text-gray-600">Service Type:</span>
-                    <span className="info-value capitalize">{waybill.shipment_details.service_type}</span>
+              {/* PAGE 1: Shipment and Receiver Information */}
+              <div className="page-1-content">
+                {/* Shipment Details */}
+                <div className="section bg-gray-50 p-4 rounded-lg mb-6">
+                  <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
+                    Shipment Information
                   </div>
-                  <div className="info-row">
-                    <span className="info-label text-gray-600">Status:</span>
-                    <span className="info-value capitalize">{waybill.shipment_details.status}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label text-gray-600">Total Weight:</span>
-                    <span className="info-value">{waybill.shipment_details.total_weight || 'N/A'} kg</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label text-gray-600">Created:</span>
-                    <span className="info-value">{formatDate(waybill.shipment_details.created_at)}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label text-gray-600">Est. Delivery:</span>
-                    <span className="info-value">{formatDate(getEstimatedDelivery())}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="info-row">
+                      <span className="info-label text-gray-600">Service Type:</span>
+                      <span className="info-value capitalize">{waybill.shipment_details.service_type}</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label text-gray-600">Total Weight:</span>
+                      <span className="info-value">{waybill.shipment_details.total_weight || 'N/A'} kg</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label text-gray-600">Shipment Date:</span>
+                      <span className="info-value">{formatDate(waybill.shipment_details.created_at)}</span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label text-gray-600">Est. Delivery:</span>
+                      <span className="info-value">{formatDate(getEstimatedDelivery())}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               {/* Sender Information - Vanguard Cargo LLC */}
               <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
@@ -483,8 +493,8 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                 </div>
               </div>
 
-              {/* Receiver Information */}
-              <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
+                {/* Receiver Information */}
+                <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
                 <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
                   
                   Receiver Information
@@ -511,14 +521,38 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                     <span className="info-value">{waybill.receiver.country}</span>
                   </div>
                 </div>
+                </div>
+
+                {/* Barcode Section on Page 1 */}
+                {waybill.barcode_data && (
+                  <div className="barcode-section text-center bg-gray-50 p-6 rounded-lg">
+                    <div className="section-title text-red-600 font-bold text-lg mb-4">Tracking Information</div>
+                    <img 
+                      src={waybill.barcode_data} 
+                      alt="Shipment Barcode" 
+                      className="mx-auto max-w-md"
+                    />
+                    {waybill.qr_code_data && (
+                      <div className="mt-4">
+                        <p className="text-gray-600 mb-2">Scan QR Code to Track</p>
+                        <img 
+                          src={waybill.qr_code_data} 
+                          alt="Tracking QR Code" 
+                          className="mx-auto w-32 h-32"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Package List */}
-              <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
+              {/* PAGE 2: Package List */}
+              <div className="page-break">
+                <div className="section bg-white border border-gray-200 p-4 rounded-lg mb-6">
                 <div className="section-title text-red-600 font-bold text-lg mb-3 flex items-center gap-2">
                   
-                  Package List ({waybill.packages.length} items)
-                </div>
+                  Package Manifest ({waybill.packages.length} items)
+                  </div>
                 <table className="packages-table w-full border-collapse">
                   <thead>
                     <tr className="bg-gray-100">
@@ -536,36 +570,15 @@ export const WaybillViewer: React.FC<WaybillViewerProps> = ({
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
-
-              {/* Barcode Section */}
-              {waybill.barcode_data && (
-                <div className="barcode-section text-center bg-gray-50 p-6 rounded-lg">
-                  <div className="section-title text-red-600 font-bold text-lg mb-4">Tracking Barcode</div>
-                  <img 
-                    src={waybill.barcode_data} 
-                    alt="Shipment Barcode" 
-                    className="mx-auto max-w-md"
-                  />
-                  {waybill.qr_code_data && (
-                    <div className="mt-4">
-                      <p className="text-gray-600 mb-2">Scan QR Code to Track</p>
-                      <img 
-                        src={waybill.qr_code_data} 
-                        alt="Tracking QR Code" 
-                        className="mx-auto w-32 h-32"
-                      />
-                    </div>
-                  )}
+                  </table>
                 </div>
-              )}
 
-              {/* Footer */}
-              <div className="footer text-center mt-8 pt-6 border-t-2 border-red-600 text-gray-600 text-sm">
-                <p className="mb-2">Generated on {formatDate(waybill.generated_at)}</p>
-                <p>© 2025 {COMPANY_INFO.name} Warehouse. All rights reserved.</p>
-                <p className="mt-2 text-xs">This is an official shipping document. Handle with care.</p>
+                {/* Footer */}
+                <div className="footer text-center mt-8 pt-6 border-t-2 border-red-600 text-gray-600 text-sm">
+                  <p className="mb-2">Generated on {formatDate(waybill.generated_at)}</p>
+                  <p>{DOCUMENT_SETTINGS.copyrightText}</p>
+                  <p className="mt-2 text-xs">This is an official shipping document. Handle with care.</p>
+                </div>
               </div>
             </div>
           )}

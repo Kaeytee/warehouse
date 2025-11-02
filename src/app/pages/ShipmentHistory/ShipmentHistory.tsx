@@ -4,7 +4,7 @@ import { warehouseShipmentService, type ShipmentData, type ShipmentStatus } from
 import { useWarehouseAuth } from '../../../hooks/useWarehouseAuth';
 import WaybillViewer from '../../../components/warehouse/WaybillViewer';
 import { warehouseDocumentService } from '../../../services/warehouseDocumentService';
-import { LOGO, COMPANY_INFO, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../../config/branding';
+import { LOGO, COMPANY_INFO, COMPANY_PHONES_SHORT, WATERMARK_TEXT, DOCUMENT_SETTINGS } from '../../../config/branding';
 
 /**
  * Shipment interface matching the backend data structure
@@ -396,8 +396,8 @@ const ShipmentHistory: React.FC = () => {
                   
                   <div class="footer">
                     <p><strong>Generated:</strong> ${new Date(item.receipt.generated_at).toLocaleString()}</p>
-                    <p style="margin-top: 10px;">This is an official receipt from VanguardCargo Warehouse</p>
-                    <p>© 2025 VanguardCargo. All rights reserved.</p>
+                    <p style="margin-top: 10px;">This is an official receipt from ${COMPANY_INFO.name} Warehouse</p>
+                    <p>${DOCUMENT_SETTINGS.copyrightText}</p>
                   </div>
                 </div>
                 

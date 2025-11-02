@@ -121,9 +121,9 @@ export const DOCUMENT_SETTINGS = {
   logoMinWidth: '100px',
   watermarkOpacity: 0.05,
   watermarkRotation: -45,
-  copyrightYear: 2025,
-  copyrightText: `© ${2025} ${COMPANY_INFO.name}. All rights reserved.`,
-} as const;
+  copyrightYear: new Date().getFullYear(),
+  copyrightText: `© ${new Date().getFullYear()} ${COMPANY_INFO.name}. All rights reserved.`,
+};
 
 // ============================================================================
 // EXPORTS

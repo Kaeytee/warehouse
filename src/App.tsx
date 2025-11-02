@@ -19,6 +19,7 @@ import About from './app/pages/About/About';
 import UserManagement from './app/pages/UserManagement/UserManagement';
 import Reports from './app/pages/Reports/Reports';
 import RecipientsManagement from './app/pages/Recipients/RecipientsManagement';
+import PrintPreview from './app/pages/PrintPreview';
 import RouteGuard from './components/RouteGuard';
 import UnauthorizedPage from './components/UnauthorizedPage';
 
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => {
       {/* Public Routes */}
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+      <Route path="/print-preview" element={<PrintPreview />} />
 
       {/* Protected Routes - All wrapped in AppLayout */}
       <Route element={<ProtectedRoute />}>

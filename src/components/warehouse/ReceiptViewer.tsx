@@ -11,7 +11,7 @@
 import React, { useRef } from 'react';
 import { FiPrinter, FiX } from 'react-icons/fi';
 import type { ReceiptData } from '../../services/warehouseDocumentService';
-import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT } from '../../config/branding';
+import { LOGO, COMPANY_INFO, COMPANY_ADDRESS_SINGLE_LINE, COMPANY_PHONES_SHORT, WATERMARK_TEXT, DOCUMENT_SETTINGS } from '../../config/branding';
 
 // ============================================================================
 // COMPONENT PROPS INTERFACE
@@ -604,7 +604,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
                 Email: {COMPANY_INFO.supportEmail} | {COMPANY_PHONES_SHORT}
               </p>
               <p className="text-xs mt-4" style={{ fontSize: '0.75em', marginTop: '1em' }}>
-                © 2025 {COMPANY_INFO.name}. All rights reserved.
+                {DOCUMENT_SETTINGS.copyrightText}
               </p>
             </div>
           </div>
