@@ -66,6 +66,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         { to: '/picking', icon: Package, label: 'Picking & Packing' },
         { to: '/dispatch', icon: Truck, label: 'Dispatch' },
       ],
+      admin: [
+        { to: '/shipments', icon: Truck, label: 'Shipments' },
+        { to: '/inventory', icon: Warehouse, label: 'Inventory' },
+        { to: '/reports', icon: BarChart3, label: 'Reports' },
+        { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+      ],
+      superadmin: [
+        { to: '/shipments', icon: Truck, label: 'Shipments' },
+        { to: '/inventory', icon: Warehouse, label: 'Inventory' },
+        { to: '/users', icon: Users, label: 'User Management' },
+        { to: '/reports', icon: BarChart3, label: 'Reports' },
+        { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+      ],
     };
 
     const userRole = user?.role?.toLowerCase().replace(/[_-]/g, '_') || '';
@@ -109,10 +122,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
               to={item.to}
               onClick={() => onNavigate?.()}
               className={({ isActive }) =>
-                `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  isActive
-                    ? 'bg-red-700 text-white'
-                    : 'text-red-100 hover:bg-red-500 hover:text-white'
+                `flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${isActive
+                  ? 'bg-red-700 text-white'
+                  : 'text-red-100 hover:bg-red-500 hover:text-white'
                 }`
               }
             >
